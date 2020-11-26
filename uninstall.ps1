@@ -6,11 +6,6 @@ function RemoveIfExists {
     }
 }
 
-function Uninstall {
-    param ([String]$package)
-
-    if( (choco list -lo | Select-String -Pattern $package).count -gt 0) { choco uninstall $package --no-progress -y }
-}
 
 Set-ExecutionPolicy Bypass -Scope Process -Force
 
@@ -37,8 +32,5 @@ Write-Host "INFO: Removing Requirements folder: $requirementsFolder"
 if(Test-Path $requirementsFolder) {
     Remove-Item -Recurse -Force -Path $requirementsFolder
 }
-
-Uninstall "cemu"
-Uninstall "dolphin"
 
 Write-Host "INFO: Uninstall completed"

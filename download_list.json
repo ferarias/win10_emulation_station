@@ -9,6 +9,10 @@
 			"url": "https://dl.dolphin-emu.org/builds/ed/c4/dolphin-master-5.0-12716-x64.7z"
 		},
 		{
+			"file": "cemu_1.22.0.zip",
+			"url": "https://cemu.info/releases/cemu_1.22.0.zip"
+		},
+		{
 			"file": "WahMunchers-SMS-R2.zip",
 			"url": "https://www.smspower.org/uploads/Homebrew/WahMunchers-SMS-R2.zip"
 		},

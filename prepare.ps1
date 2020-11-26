@@ -74,7 +74,6 @@ $scriptDir = Split-Path $scriptPath
 Write-Host "INFO: Script directory is: $scriptDir"
 
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-choco install cemu --no-progress -y 
 
 # Acquire files 
 $requirementsFolder = "$PSScriptRoot\requirements"
@@ -254,6 +253,22 @@ if (Test-Path $dolphinEmulatorMsi) {
 }
 else {
     Write-Host "ERROR: $dolphinEmulatorMsi not found."
+    exit -1
+}
+
+# CEMU Setup
+$cemuEmulatorZip = "$requirementsFolder\cemu_1.22.0.zip"
+$cemuEmulatorTemp = "$requirementsFolder\cemuTemp"
+if (Test-Path $cemuEmulatorZip) {
+    $cemuEmulatorPath = "$env:userprofile\.emulationstation\systems\cemu"
+    New-Item -ItemType Directory -Force -Path $cemuEmulatorPath | Out-Null
+    Expand-Archive -Path $cemuEmulatorZip -Destination $cemuEmulatorTemp | Out-Null
+    Move-Item -Path "$cemuEmulatorTemp\cemu_1.22.0\*" -Destination $cemuEmulatorPath
+    $cemuBinary = "$cemuEmulatorPath\Cemu.exe"
+    Remove-Item -Path $cemuEmulatorTemp -Recurse -Force
+}
+else {
+    Write-Host "ERROR: $cemuEmulatorZip not found."
     exit -1
 }
 
@@ -746,7 +761,7 @@ $newConfig = "<systemList>
         <fullname>Nintendo Wii U</fullname>
         <path>$wiiuPath</path>
         <extension>.rpx .RPX</extension>
-        <command>START /D C:\tools\cemu\ Cemu.exe -f -g `"%ROM_RAW%`"</command>
+        <command>START /D $cemuBinary -f -g `"%ROM_RAW%`"</command>
         <platform>wiiu</platform>
         <theme>wiiu</theme>
 </system>
