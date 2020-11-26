@@ -7,11 +7,13 @@ function RemoveIfExists {
 }
 
 
-Set-ExecutionPolicy Bypass -Scope Process -Force
-
 $scriptPath = $MyInvocation.MyCommand.Path
 $scriptDir = Split-Path $scriptPath
 Write-Host "INFO: Script directory is: $scriptDir"
+
+$installDir = "D:\Emu2"
+Write-Host "INFO: Install directory is: $installDir"
+
 
 Write-Host "INFO: Removing desktop shortcuts"
 $desktop = [System.Environment]::GetFolderPath('Desktop')
@@ -38,5 +40,11 @@ if(Test-Path $recalboxThemeFolder) {
 # if(Test-Path $requirementsFolder) {
 #     Remove-Item -Recurse -Force -Path $requirementsFolder
 # }
+
+if(Test-Path $installDir) {
+    Write-Host "INFO: Removing install folder: $installDir"
+    Remove-Item -Recurse -Force -Path $installDir
+}
+
 
 Write-Host "INFO: Uninstall completed"

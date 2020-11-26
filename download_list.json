@@ -5,6 +5,10 @@
 			"url": "https://www.7-zip.org/a/7z1900.exe"
 		},
 		{
+			"file": "emulationstation_win32_latest.zip",
+			"url": "https://emulationstation.org/downloads/releases/emulationstation_win32_latest.zip"
+		},
+		{
 			"file": "dolphin-master-5.0-12716-x64.7z",
 			"url": "https://dl.dolphin-emu.org/builds/ed/c4/dolphin-master-5.0-12716-x64.7z"
 		},
@@ -19,10 +23,6 @@
 		{
 			"file": "hermes-v.latest-ps2.zip",
 			"url": "http://www.retroguru.com/hermes/hermes-v.latest-ps2.zip"
-		},
-		{
-			"file": "emulationstation_win32_latest.exe",
-			"url": "https://emulationstation.org/downloads/releases/emulationstation_win32_latest.exe"
 		},
 		{
 			"file": "ePSXe205.zip",

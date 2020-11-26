@@ -74,8 +74,9 @@ $scriptPath = $MyInvocation.MyCommand.Path
 $scriptDir = Split-Path $scriptPath
 Write-Host "INFO: Script directory is: $scriptDir"
 
-# Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-
+$installDir = "D:\Emu2"
+Write-Host "INFO: Install directory is: $installDir"
+New-Item -ItemType Directory -Force -Path $installDir
 
 # Acquire files 
 $requirementsFolder = "$PSScriptRoot\requirements"
@@ -90,11 +91,20 @@ Expand-7Zip -ArchiveFileName "$requirementsFolder\7z1900.exe" -TargetPath "$requ
 
 
 # Install Emulation Station
-Start-Process "$requirementsFolder\emulationstation_win32_latest.exe" -ArgumentList "/S" -Wait
-
+# Start-Process "$requirementsFolder\emulationstation_win32_latest.exe" -ArgumentList "/S" -Wait
+$emulationStationPackage = [System.IO.Path]::Combine($requirementsFolder, "emulationstation_win32_latest.zip");
+$emulationStationInstallFolder = [System.IO.Path]::Combine($installDir, "EmulationStation");
+if (Test-Path $emulationStationPackage) {
+    Extract -Path $emulationStationPackage -Destination $emulationStationInstallFolder | Out-Null
+}
+else {
+    Write-Host "ERROR: $emulationStationPackage not found."
+    exit -1
+}
+$emulationStationBinary = [System.IO.Path]::Combine($emulationStationInstallFolder, "emulationstation.exe")
 
 # Generate Emulation Station config file
-& "${env:ProgramFiles(x86)}\EmulationStation\emulationstation.exe"
+& "$emulationStationBinary"
 while (!(Test-Path "$env:userprofile\.emulationstation\es_systems.cfg")) { 
     Write-Host "INFO: Checking for config file..."
     Start-Sleep 5
@@ -785,7 +795,6 @@ else {
 }
 
 Write-Host "INFO: Update EmulationStation binaries"
-$emulationStationInstallFolder = "${env:ProgramFiles(x86)}\EmulationStation"
 $updatedEmulationStatonBinaries = "$requirementsFolder\EmulationStation-Win32-continuous-master.zip"
 if (Test-Path $updatedEmulationStatonBinaries) {
     Extract -Path $updatedEmulationStatonBinaries -Destination $emulationStationInstallFolder | Out-Null
@@ -1051,7 +1060,6 @@ Write-Host "INFO: Adding in useful desktop shortcuts"
 $userProfileVariable = Get-ChildItem Env:UserProfile
 $romsShortcut = $userProfileVariable.Value + "\.emulationstation\roms"
 $coresShortcut = $userProfileVariable.Value + "\.emulationstation\systems\retroarch\cores"
-$windowedEmulationStation = "${env:ProgramFiles(x86)}\EmulationStation\emulationstation.exe"
 
 $wshshell = New-Object -ComObject WScript.Shell
 $desktop = [System.Environment]::GetFolderPath('Desktop')
@@ -1065,7 +1073,7 @@ $lnkCores.Save()
 
 $lnkWindowed = $wshshell.CreateShortcut("$desktop\Windowed EmulationStation.lnk")
 $lnkWindowed.Arguments = "--resolution 1366 768 --windowed"
-$lnkWindowed.TargetPath = $windowedEmulationStation
+$lnkWindowed.TargetPath = $emulationStationBinary
 $lnkWindowed.Save() 
 
 Write-Host "INFO: Setup completed"
