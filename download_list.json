@@ -5,6 +5,10 @@
 			"url": "https://www.7-zip.org/a/7z1900.exe"
 		},
 		{
+			"file": "dolphin-master-5.0-12716-x64.7z",
+			"url": "https://dl.dolphin-emu.org/builds/ed/c4/dolphin-master-5.0-12716-x64.7z"
+		},
+		{
 			"file": "WahMunchers-SMS-R2.zip",
 			"url": "https://www.smspower.org/uploads/Homebrew/WahMunchers-SMS-R2.zip"
 		},

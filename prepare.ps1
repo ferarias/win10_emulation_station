@@ -74,7 +74,6 @@ $scriptDir = Split-Path $scriptPath
 Write-Host "INFO: Script directory is: $scriptDir"
 
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-choco install dolphin --pre --no-progress -y 
 choco install cemu --no-progress -y 
 
 # Acquire files 
@@ -97,6 +96,7 @@ else {
 
 # Install Emulation Station
 Start-Process "$requirementsFolder\emulationstation_win32_latest.exe" -ArgumentList "/S" -Wait
+
 
 # Generate Emulation Station config file
 & "${env:ProgramFiles(x86)}\EmulationStation\emulationstation.exe"
@@ -234,9 +234,26 @@ if (Test-Path $ps2EmulatorMsi) {
     $ps2Binary = "$ps2EmulatorPath\PCSX2\pcsx2.exe"
     $ps2BiosPath = "$ps2EmulatorPath\bios\"
     New-Item -ItemType Directory -Force -Path $ps2BiosPath | Out-Null
+    Remove-Item -Path $ps2EmulatorTemp -Recurse -Force
 }
 else {
     Write-Host "ERROR: $ps2EmulatorMsi not found."
+    exit -1
+}
+
+# Dolphin Setup
+$dolphinEmulatorMsi = "$requirementsFolder\dolphin-master-5.0-12716-x64.7z"
+$dolphinEmulatorTemp = "$requirementsFolder\dolphinTemp"
+if (Test-Path $dolphinEmulatorMsi) {
+    $dolphinEmulatorPath = "$env:userprofile\.emulationstation\systems\dolphin"
+    New-Item -ItemType Directory -Force -Path $dolphinEmulatorPath | Out-Null
+    Expand-Archive -Path $dolphinEmulatorMsi -Destination $dolphinEmulatorTemp | Out-Null
+    Move-Item -Path "$dolphinEmulatorTemp\Dolphin-x64\*" -Destination $dolphinEmulatorPath
+    $dolphinBinary = "$dolphinEmulatorPath\Dolphin.exe"
+    Remove-Item -Path $dolphinEmulatorTemp -Recurse -Force
+}
+else {
+    Write-Host "ERROR: $dolphinEmulatorMsi not found."
     exit -1
 }
 
@@ -558,7 +575,7 @@ $newConfig = "<systemList>
         <name>gc</name>
         <path>$gcPath</path>
         <extension>.iso .ISO</extension>
-        <command>C:\tools\Dolphin-x64\Dolphin.exe -e `"%ROM_RAW%`"</command>
+        <command>$dolphinBinary -e `"%ROM_RAW%`"</command>
         <platform>gc</platform>
         <theme>gc</theme>
     </system>
@@ -567,7 +584,7 @@ $newConfig = "<systemList>
         <fullname>Nintendo Wii</fullname>
         <path>$wiiPath</path>
         <extension>.iso .ISO .wad .WAD</extension>
-        <command>C:\tools\Dolphin-x64\Dolphin.exe -e `"%ROM_RAW%`"</command>
+        <command>$dolphinBinary -e `"%ROM_RAW%`"</command>
         <platform>wii</platform>
         <theme>wii</theme>  
     </system>
