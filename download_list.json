@@ -1,6 +1,10 @@
 {
 	"downloads": [
 		{
+			"file": "7z1900.exe",
+			"url": "https://www.7-zip.org/a/7z1900.exe"
+		},
+		{
 			"file": "WahMunchers-SMS-R2.zip",
 			"url": "https://www.smspower.org/uploads/Homebrew/WahMunchers-SMS-R2.zip"
 		},
