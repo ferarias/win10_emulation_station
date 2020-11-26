@@ -9,6 +9,10 @@
 			"url": "https://emulationstation.org/downloads/releases/emulationstation_win32_latest.zip"
 		},
 		{
+			"file": "RetroArch.7z",
+			"url": "https://buildbot.libretro.com/stable/1.9.0/windows/x86_64/RetroArch.7z"
+		},
+		{
 			"file": "dolphin-master-5.0-12716-x64.7z",
 			"url": "https://dl.dolphin-emu.org/builds/ed/c4/dolphin-master-5.0-12716-x64.7z"
 		},
@@ -31,10 +35,6 @@
 		{
 			"file": "pcsx2-1.6.0-setup.exe",
 			"url": "https://delivery2.filecroco.com/kits_6/pcsx2-1.6.0-setup.exe"
-		},
-		{
-			"file": "RetroArch.7z",
-			"url": "https://buildbot.libretro.com/stable/1.9.0/windows/x86_64/RetroArch.7z"
 		},
 		{
 			"file": "assimilate_full.zip",

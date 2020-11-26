@@ -1,3 +1,9 @@
+param (
+    [Parameter(Mandatory)]
+    $InstallDir,
+    [bool] $Portable = $False
+)
+
 function DownloadFiles {
     param ([String]$jsonDownloadOption)
     
@@ -74,9 +80,8 @@ $scriptPath = $MyInvocation.MyCommand.Path
 $scriptDir = Split-Path $scriptPath
 Write-Host "INFO: Script directory is: $scriptDir"
 
-$installDir = "D:\Emu2"
-Write-Host "INFO: Install directory is: $installDir"
-New-Item -ItemType Directory -Force -Path $installDir
+Write-Host "INFO: Install directory is: $InstallDir"
+New-Item -ItemType Directory -Force -Path $InstallDir
 
 # Acquire files 
 $requirementsFolder = "$PSScriptRoot\requirements"
@@ -93,7 +98,7 @@ Expand-7Zip -ArchiveFileName "$requirementsFolder\7z1900.exe" -TargetPath "$requ
 # Install Emulation Station
 # Start-Process "$requirementsFolder\emulationstation_win32_latest.exe" -ArgumentList "/S" -Wait
 $emulationStationPackage = [System.IO.Path]::Combine($requirementsFolder, "emulationstation_win32_latest.zip");
-$emulationStationInstallFolder = [System.IO.Path]::Combine($installDir, "EmulationStation");
+$emulationStationInstallFolder = [System.IO.Path]::Combine($InstallDir, "EmulationStation");
 if (Test-Path $emulationStationPackage) {
     Extract -Path $emulationStationPackage -Destination $emulationStationInstallFolder | Out-Null
 }
@@ -102,6 +107,9 @@ else {
     exit -1
 }
 $emulationStationBinary = [System.IO.Path]::Combine($emulationStationInstallFolder, "emulationstation.exe")
+$emulationStationIcon = [System.IO.Path]::Combine($emulationStationInstallFolder, "icon.ico")
+$emulationStationPortableBat = [System.IO.Path]::Combine($emulationStationInstallFolder, "launch_portable.bat")
+$emulationStationPortableWindowedBat = [System.IO.Path]::Combine($emulationStationInstallFolder, "launch_portable_windowed.bat")
 
 # Generate Emulation Station config file
 & "$emulationStationBinary"
@@ -1056,24 +1064,72 @@ else {
     exit -1
 }
 
-Write-Host "INFO: Adding in useful desktop shortcuts"
+# Create Shortcuts
 $userProfileVariable = Get-ChildItem Env:UserProfile
-$romsShortcut = $userProfileVariable.Value + "\.emulationstation\roms"
-$coresShortcut = $userProfileVariable.Value + "\.emulationstation\systems\retroarch\cores"
+if($Portable) {
+    Write-Host "INFO: Moving '$env:userprofile\.emulationstation' to '$emulationStationInstallFolder\.emulationstation'..."
+    Robocopy "$env:userprofile\.emulationstation" "$emulationStationInstallFolder\.emulationstation" /MOVE /E /NFL /NDL /NJH /NJS /nc /ns
+    $romsShortcut = "$emulationStationInstallFolder\.emulationstation\roms"
+    $coresShortcut = "$emulationStationInstallFolder\.emulationstation\systems\retroarch\cores"
+} else {
+    $romsShortcut = $userProfileVariable.Value + "\.emulationstation\roms"
+    $coresShortcut = $userProfileVariable.Value + "\.emulationstation\systems\retroarch\cores"
+}
 
+Write-Host "INFO: Creating shortcuts"
 $wshshell = New-Object -ComObject WScript.Shell
-$desktop = [System.Environment]::GetFolderPath('Desktop')
-$lnkRoms = $wshshell.CreateShortcut("$desktop\Roms Location.lnk")
+
+$lnkRoms = $wshshell.CreateShortcut("$InstallDir\Roms.lnk")
 $lnkRoms.TargetPath = $romsShortcut
 $lnkRoms.Save() 
 
-$lnkCores = $wshshell.CreateShortcut("$desktop\Cores Location.lnk")
+$lnkCores = $wshshell.CreateShortcut("$InstallDir\Cores.lnk")
 $lnkCores.TargetPath = $coresShortcut
 $lnkCores.Save() 
 
-$lnkWindowed = $wshshell.CreateShortcut("$desktop\Windowed EmulationStation.lnk")
-$lnkWindowed.Arguments = "--resolution 1366 768 --windowed"
-$lnkWindowed.TargetPath = $emulationStationBinary
+$lnkEmulationStation = $wshshell.CreateShortcut("$InstallDir\EmulationStation.lnk")
+$lnkEmulationStation.WorkingDirectory = $emulationStationInstallFolder
+$lnkEmulationStation.IconLocation = $emulationStationIcon
+if($Portable) {
+    $lnkEmulationStation.TargetPath = $emulationStationPortableBat
+} else {
+    $lnkEmulationStation.TargetPath = $emulationStationBinary
+}
+$lnkEmulationStation.Save() 
+
+$lnkWindowed = $wshshell.CreateShortcut("$InstallDir\EmulationStation (Windowed).lnk")
+$lnkWindowed.WorkingDirectory = $emulationStationInstallFolder
+$lnkWindowed.IconLocation = $emulationStationIcon
+if($Portable) {
+    $lnkWindowed.TargetPath = $emulationStationPortableWindowedBat
+} else {
+    $lnkWindowed.TargetPath = $emulationStationBinary
+    $lnkWindowed.Arguments = "--resolution 1366 768 --windowed"
+}
 $lnkWindowed.Save() 
+
+$desktop = [System.Environment]::GetFolderPath('Desktop')
+$lnkEmulationStationDesktop = $wshshell.CreateShortcut("$desktop\EmulationStation.lnk")
+$lnkEmulationStationDesktop.WorkingDirectory = $emulationStationInstallFolder
+$lnkEmulationStationDesktop.IconLocation = $emulationStationIcon
+if($Portable) {
+    $lnkEmulationStationDesktop.TargetPath = $emulationStationPortableBat
+} else {
+    $lnkEmulationStationDesktop.TargetPath = $emulationStationBinary
+}
+$lnkEmulationStationDesktop.Save() 
+
+
+$lnkEmulationStationWindowedDesktop = $wshshell.CreateShortcut("$desktop\EmulationStation (Windowed).lnk")
+$lnkEmulationStationWindowedDesktop.WorkingDirectory = $emulationStationInstallFolder
+$lnkEmulationStationWindowedDesktop.IconLocation = $emulationStationIcon
+if($Portable) {
+    $lnkEmulationStationWindowedDesktop.TargetPath = $emulationStationPortableWindowedBat
+} else {
+    $lnkEmulationStationWindowedDesktop.TargetPath = $emulationStationBinary
+    $lnkEmulationStationWindowedDesktop.Arguments = "--resolution 1366 768 --windowed"
+}
+$lnkEmulationStationWindowedDesktop.Save() 
+
 
 Write-Host "INFO: Setup completed"
