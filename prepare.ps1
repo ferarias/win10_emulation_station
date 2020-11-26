@@ -57,7 +57,7 @@ function GithubReleaseFiles {
 
 }
 
-function Expand-Archive([string]$Path, [string]$Destination) {
+function Extract([string]$Path, [string]$Destination) {
     $7z_Application = "$requirementsFolder\7z\7z.exe"
     $7z_Arguments = @(
         'x'                         ## eXtract files with full paths
@@ -68,12 +68,14 @@ function Expand-Archive([string]$Path, [string]$Destination) {
     & $7z_Application $7z_Arguments | Out-Null
 }
 
+
 # Get script path
 $scriptPath = $MyInvocation.MyCommand.Path
 $scriptDir = Split-Path $scriptPath
 Write-Host "INFO: Script directory is: $scriptDir"
 
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+# Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
 
 # Acquire files 
 $requirementsFolder = "$PSScriptRoot\requirements"
@@ -82,15 +84,9 @@ DownloadFiles("downloads")
 DownloadFiles("other_downloads")
 GithubReleaseFiles
 
-# 7z Setup
-$sevenZip = "$requirementsFolder\7z1900.exe"
-if (Test-Path $sevenZip) {
-    Start-Process $sevenZip -ArgumentList "/S /D=$requirementsFolder\7z\" -Wait
-}
-else {
-    Write-Host "ERROR: $sevenZip not found."
-    exit -1
-}
+# Prepare 7-zip
+Install-Module -Name 7Zip4Powershell -Scope CurrentUser -Force
+Expand-7Zip -ArchiveFileName "$requirementsFolder\7z1900.exe" -TargetPath "$requirementsFolder\7z\"
 
 
 # Install Emulation Station
@@ -106,23 +102,29 @@ while (!(Test-Path "$env:userprofile\.emulationstation\es_systems.cfg")) {
 Write-Host "INFO: Config file generated"
 Stop-Process -Name "emulationstation"
 
+$systemsPath = "$env:userprofile\.emulationstation\systems"
+
 # Prepare Retroarch
-$retroArchPath = "$env:userprofile\.emulationstation\systems\retroarch\"
-$coresPath = "$retroArchPath\cores"
-$retroArchBinary = "$requirementsFolder\RetroArch.7z"
-if (Test-Path $retroArchBinary) {
-    New-Item -ItemType Directory -Force -Path $retroArchPath | Out-Null
-    Expand-Archive -Path $retroArchBinary -Destination $retroArchPath | Out-Null
+$retroArchTempPath = "$requirementsFolder\retroarch"
+$retroArchPath = "$systemsPath\retroarch\"
+if(!(Test-Path $retroArchTempPath)) {
+    $retroArchPackage = [System.IO.Path]::Combine($requirementsFolder, "RetroArch.7z");
+    if (Test-Path $retroArchPackage) {
+        Extract -Path $retroArchPackage -Destination $retroArchTempPath | Out-Null
+    }
+    else {
+        Write-Host "ERROR: $retroArchBinary not found."
+        exit -1
+    }
 }
-else {
-    Write-Host "ERROR: $retroArchBinary not found."
-    exit -1
-}
+Copy-Item -Path $retroArchTempPath -Destination $retroArchPath -Recurse -Force
+$coresPath = [System.IO.Path]::Combine($retroArchPath, "cores");
+
 
 # NES Setup
 $nesCore = "$requirementsFolder\fceumm_libretro.dll.zip"
 if (Test-Path $nesCore) {
-    Expand-Archive -Path $nesCore -Destination $coresPath | Out-Null
+    Extract -Path $nesCore -Destination $coresPath | Out-Null
 }
 else {
     Write-Host "ERROR: $nesCore not found."
@@ -132,7 +134,7 @@ else {
 # N64 Setup
 $n64Core = "$requirementsFolder\parallel_n64_libretro.dll.zip"
 if (Test-Path $n64Core) {
-    Expand-Archive -Path $n64Core -Destination $coresPath | Out-Null
+    Extract -Path $n64Core -Destination $coresPath | Out-Null
 }
 else {
     Write-Host "ERROR: $n64Core not found."
@@ -142,7 +144,7 @@ else {
 # FBA Setup
 $fbaCore = "$requirementsFolder\fbalpha2012_libretro.dll.zip"
 if (Test-Path $fbaCore) {
-    Expand-Archive -Path $fbaCore -Destination $coresPath | Out-Null
+    Extract -Path $fbaCore -Destination $coresPath | Out-Null
 }
 else {
     Write-Host "ERROR: $fbaCore not found."
@@ -152,7 +154,7 @@ else {
 # GBA Setup
 $gbaCore = "$requirementsFolder\vba_next_libretro.dll.zip"
 if (Test-Path $gbaCore) {
-    Expand-Archive -Path $gbaCore -Destination $coresPath | Out-Null
+    Extract -Path $gbaCore -Destination $coresPath | Out-Null
 }
 else {
     Write-Host "ERROR: $gbaCore not found."
@@ -162,7 +164,7 @@ else {
 # SNES Setup
 $snesCore = "$requirementsFolder\snes9x_libretro.dll.zip"
 if (Test-Path $snesCore) {
-    Expand-Archive -Path $snesCore -Destination $coresPath | Out-Null
+    Extract -Path $snesCore -Destination $coresPath | Out-Null
 }
 else {
     Write-Host "ERROR: $snesCore not found."
@@ -172,7 +174,7 @@ else {
 # Genesis GX Setup
 $mdCore = "$requirementsFolder\genesis_plus_gx_libretro.dll.zip"
 if (Test-Path $mdCore) {
-    Expand-Archive -Path $mdCore -Destination $coresPath | Out-Null
+    Extract -Path $mdCore -Destination $coresPath | Out-Null
 }
 else {
     Write-Host "ERROR: $mdCore not found."
@@ -182,7 +184,7 @@ else {
 # Game boy Colour Setup
 $gbcCore = "$requirementsFolder\gambatte_libretro.dll.zip"
 if (Test-Path $gbcCore) {
-    Expand-Archive -Path $gbcCore -Destination $coresPath | Out-Null
+    Extract -Path $gbcCore -Destination $coresPath | Out-Null
 }
 else {
     Write-Host "ERROR: $gbcCore not found."
@@ -192,7 +194,7 @@ else {
 # Atari2600 Setup
 $atari2600Core = "$requirementsFolder\stella_libretro.dll.zip"
 if (Test-Path $atari2600Core) {
-    Expand-Archive -Path $atari2600Core -Destination $coresPath | Out-Null
+    Extract -Path $atari2600Core -Destination $coresPath | Out-Null
 }
 else {
     Write-Host "ERROR: $atari2600Core not found."
@@ -202,7 +204,7 @@ else {
 # MAME Setup
 $mameCore = "$requirementsFolder\hbmame_libretro.dll.zip"
 if (Test-Path $mameCore) {
-    Expand-Archive -Path $mameCore -Destination $coresPath | Out-Null
+    Extract -Path $mameCore -Destination $coresPath | Out-Null
 }
 else {
     Write-Host "ERROR: $mameCore not found."
@@ -215,7 +217,7 @@ if (Test-Path $psxEmulator) {
     $psxEmulatorPath = "$env:userprofile\.emulationstation\systems\epsxe"
     $psxBiosPath = "$psxEmulatorPath\bios\"
     New-Item -ItemType Directory -Force -Path $psxEmulatorPath | Out-Null
-    Expand-Archive -Path $psxEmulator -Destination $psxEmulatorPath | Out-Null
+    Extract -Path $psxEmulator -Destination $psxEmulatorPath | Out-Null
 }
 else {
     Write-Host "ERROR: $psxEmulator not found."
@@ -228,7 +230,7 @@ $ps2EmulatorTemp = "$requirementsFolder\pcsx2temp"
 if (Test-Path $ps2EmulatorMsi) {
     $ps2EmulatorPath = "$env:userprofile\.emulationstation\systems\pcsx2"
     New-Item -ItemType Directory -Force -Path $ps2EmulatorPath | Out-Null
-    Expand-Archive -Path $ps2EmulatorMsi -Destination $ps2EmulatorTemp | Out-Null
+    Extract -Path $ps2EmulatorMsi -Destination $ps2EmulatorTemp | Out-Null
     Move-Item -Path "$ps2EmulatorTemp\`$TEMP\PCSX2 1.6.0" -Destination "$ps2EmulatorPath\PCSX2"
     $ps2Binary = "$ps2EmulatorPath\PCSX2\pcsx2.exe"
     $ps2BiosPath = "$ps2EmulatorPath\bios\"
@@ -246,7 +248,7 @@ $dolphinEmulatorTemp = "$requirementsFolder\dolphinTemp"
 if (Test-Path $dolphinEmulatorMsi) {
     $dolphinEmulatorPath = "$env:userprofile\.emulationstation\systems\dolphin"
     New-Item -ItemType Directory -Force -Path $dolphinEmulatorPath | Out-Null
-    Expand-Archive -Path $dolphinEmulatorMsi -Destination $dolphinEmulatorTemp | Out-Null
+    Extract -Path $dolphinEmulatorMsi -Destination $dolphinEmulatorTemp | Out-Null
     Move-Item -Path "$dolphinEmulatorTemp\Dolphin-x64\*" -Destination $dolphinEmulatorPath
     $dolphinBinary = "$dolphinEmulatorPath\Dolphin.exe"
     Remove-Item -Path $dolphinEmulatorTemp -Recurse -Force
@@ -262,7 +264,7 @@ $cemuEmulatorTemp = "$requirementsFolder\cemuTemp"
 if (Test-Path $cemuEmulatorZip) {
     $cemuEmulatorPath = "$env:userprofile\.emulationstation\systems\cemu"
     New-Item -ItemType Directory -Force -Path $cemuEmulatorPath | Out-Null
-    Expand-Archive -Path $cemuEmulatorZip -Destination $cemuEmulatorTemp | Out-Null
+    Extract -Path $cemuEmulatorZip -Destination $cemuEmulatorTemp | Out-Null
     Move-Item -Path "$cemuEmulatorTemp\cemu_1.22.0\*" -Destination $cemuEmulatorPath
     $cemuBinary = "$cemuEmulatorPath\Cemu.exe"
     Remove-Item -Path $cemuEmulatorTemp -Recurse -Force
@@ -275,7 +277,7 @@ else {
 # NeoGeo Pocket Setup
 $ngpCore = "$requirementsFolder\race_libretro.dll.zip"
 if (Test-Path $ngpCore) {
-    Expand-Archive -Path $ngpCore -Destination $coresPath | Out-Null
+    Extract -Path $ngpCore -Destination $coresPath | Out-Null
 }
 else {
     Write-Host "ERROR: $ngpCore not found."
@@ -341,7 +343,7 @@ $nesPath = "$romPath\nes"
 $nesRom = "$requirementsFolder\assimilate_full.zip" 
 if (Test-Path $nesRom) {
     New-Item -ItemType Directory -Force -Path $nesPath | Out-Null
-    Expand-Archive -Path $nesRom -Destination $nesPath | Out-Null
+    Extract -Path $nesRom -Destination $nesPath | Out-Null
 }
 else {
     Write-Host "ERROR: $nesRom not found."
@@ -353,7 +355,7 @@ $n64Path = "$romPath\n64"
 $n64Rom = "$requirementsFolder\pom-twin.zip"
 if (Test-Path $n64Rom) {
     New-Item -ItemType Directory -Force -Path $n64Path | Out-Null
-    Expand-Archive -Path $n64Rom -Destination $n64Path | Out-Null
+    Extract -Path $n64Rom -Destination $n64Path | Out-Null
 }
 else {
     Write-Host "ERROR: $n64Rom not found."
@@ -401,7 +403,7 @@ $psxPath = "$romPath\psx"
 $psxRom = "$requirementsFolder\Marilyn_In_the_Magic_World_(010a).7z"
 if (Test-Path $psxRom) {
     New-Item -ItemType Directory -Force -Path $psxPath | Out-Null
-    Expand-Archive -Path $psxRom -Destination $psxPath | Out-Null
+    Extract -Path $psxRom -Destination $psxPath | Out-Null
 }
 else {
     Write-Host "ERROR: $psxRom not found."
@@ -413,7 +415,7 @@ $ps2Path = "$romPath\ps2"
 $ps2Rom = "$requirementsFolder\hermes-v.latest-ps2.zip"
 if (Test-Path $ps2Rom) {
     New-Item -ItemType Directory -Force -Path $ps2Path | Out-Null
-    Expand-Archive -Path $ps2Rom -Destination $ps2Path | Out-Null
+    Extract -Path $ps2Rom -Destination $ps2Path | Out-Null
 }
 else {
     Write-Host "ERROR: $ps2Rom not found."
@@ -429,7 +431,7 @@ $gbcPath = "$romPath\gbc"
 $gbcRom = "$requirementsFolder\star_heritage.zip" 
 if (Test-Path $gbcRom) {
     New-Item -ItemType Directory -Force -Path $gbcPath | Out-Null
-    Expand-Archive -Path $gbcRom -Destination $gbcPath | Out-Null
+    Extract -Path $gbcRom -Destination $gbcPath | Out-Null
 }
 else {
     Write-Host "ERROR: $gbcRom not found."
@@ -441,7 +443,7 @@ $masterSystemPath = "$romPath\mastersystem"
 $masterSystemRom = "$requirementsFolder\WahMunchers-SMS-R2.zip" 
 if (Test-Path $masterSystemRom) {
     New-Item -ItemType Directory -Force -Path $masterSystemPath | Out-Null
-    Expand-Archive -Path $masterSystemRom -Destination $masterSystemPath | Out-Null
+    Extract -Path $masterSystemRom -Destination $masterSystemPath | Out-Null
 }
 else {
     Write-Host "ERROR: $masterSystemRom not found."
@@ -482,7 +484,7 @@ $neogeoPocketPath = "$romPath\ngp"
 $ngpRom = "$requirementsFolder\neopocket.zip"
 if (Test-Path $ngpRom) {
     New-Item -ItemType Directory -Force -Path $neogeoPocketPath | Out-Null
-    Expand-Archive -Path $ngpRom -Destination $neogeoPocketPath | Out-Null
+    Extract -Path $ngpRom -Destination $neogeoPocketPath | Out-Null
 }
 else {
     Write-Host "ERROR: $ngpRom not found."
@@ -497,7 +499,7 @@ Write-Host "INFO: MSX Setup"
 $msxPath = "$romPath\msx"
 $msxCore = "$requirementsFolder\fmsx_libretro.dll.zip"
 if (Test-Path $msxCore) {
-    Expand-Archive -Path $msxCore -Destination $coresPath | Out-Null
+    Extract -Path $msxCore -Destination $coresPath | Out-Null
     New-Item -ItemType Directory -Force -Path $msxPath | Out-Null
 }
 else {
@@ -509,7 +511,7 @@ Write-Host "INFO: Commodore 64 Setup"
 $commodore64Path = "$romPath\c64"
 $commodore64Core = "$requirementsFolder\vice_x64_libretro.dll.zip"
 if (Test-Path $commodore64Core) {
-    Expand-Archive -Path $commodore64Core -Destination $coresPath | Out-Null
+    Extract -Path $commodore64Core -Destination $coresPath | Out-Null
     New-Item -ItemType Directory -Force -Path $commodore64Path | Out-Null
 }
 else {
@@ -521,7 +523,7 @@ Write-Host "INFO: Amiga Setup"
 $amigaPath = "$romPath\amiga"
 $amigaCore = "$requirementsFolder\puae_libretro.dll.zip"
 if (Test-Path $amigaCore) {
-    Expand-Archive -Path $amigaCore -Destination $coresPath | Out-Null
+    Extract -Path $amigaCore -Destination $coresPath | Out-Null
     New-Item -ItemType Directory -Force -Path $amigaPath | Out-Null
 }
 else {
@@ -533,7 +535,7 @@ Write-Host "INFO: Setup Atari7800"
 $atari7800Path = "$romPath\atari7800"
 $atari7800Core = "$requirementsFolder\prosystem_libretro.dll.zip"
 if (Test-Path $atari7800Core) {
-    Expand-Archive -Path $atari7800Core -Destination $coresPath | Out-Null
+    Extract -Path $atari7800Core -Destination $coresPath | Out-Null
     New-Item -ItemType Directory -Force -Path $atari7800Path | Out-Null
 }
 else {
@@ -773,7 +775,7 @@ Write-Host "INFO: Setting up Emulation Station theme recalbox-backport"
 $themesPath = "$env:userprofile\.emulationstation\themes\recalbox-backport\"
 $themesFile = "$requirementsFolder\recalbox-backport-v2-recalbox-backport-v2.1.zip"
 if (Test-Path $themesFile) {
-    Expand-Archive -Path $themesFile -Destination $requirementsFolder | Out-Null
+    Extract -Path $themesFile -Destination $requirementsFolder | Out-Null
     $themesFolder = "$requirementsFolder\recalbox-backport\"
     robocopy $themesFolder $themesPath /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
 }
@@ -786,7 +788,7 @@ Write-Host "INFO: Update EmulationStation binaries"
 $emulationStationInstallFolder = "${env:ProgramFiles(x86)}\EmulationStation"
 $updatedEmulationStatonBinaries = "$requirementsFolder\EmulationStation-Win32-continuous-master.zip"
 if (Test-Path $updatedEmulationStatonBinaries) {
-    Expand-Archive -Path $updatedEmulationStatonBinaries -Destination $emulationStationInstallFolder | Out-Null
+    Extract -Path $updatedEmulationStatonBinaries -Destination $emulationStationInstallFolder | Out-Null
 }
 else {
     Write-Host "ERROR: $updatedEmulationStatonBinaries not found."
@@ -1038,7 +1040,7 @@ Write-Output $dolphinConfigFileContent  > $dolphinConfigFile
 Write-Host "INFO: Adding scraper in"
 $scraperZip = "$requirementsFolder\scraper_windows_amd64*.zip"
 if (Test-Path $scraperZip) {
-    Expand-Archive -Path $scraperZip -Destination $romPath | Out-Null
+    Extract -Path $scraperZip -Destination $romPath | Out-Null
 }
 else {
     Write-Host "ERROR: $scraperZip not found."

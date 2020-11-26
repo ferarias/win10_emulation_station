@@ -14,7 +14,6 @@ $scriptDir = Split-Path $scriptPath
 Write-Host "INFO: Script directory is: $scriptDir"
 
 Write-Host "INFO: Removing desktop shortcuts"
-
 $desktop = [System.Environment]::GetFolderPath('Desktop')
 RemoveIfExists "$desktop\Windowed EmulationStation.lnk"
 RemoveIfExists "$desktop\EmulationStation.lnk"
@@ -28,9 +27,16 @@ if(Test-Path $esUserFolder) {
 }
 
 $requirementsFolder = "$PSScriptRoot\requirements"
-Write-Host "INFO: Removing Requirements folder: $requirementsFolder"
-if(Test-Path $requirementsFolder) {
-    Remove-Item -Recurse -Force -Path $requirementsFolder
+
+$recalboxThemeFolder = "$requirementsFolder\recalbox-backport"
+if(Test-Path $recalboxThemeFolder) {
+    Write-Host "INFO: Removing RecalBox theme folder: $recalboxThemeFolder"
+    Remove-Item -Recurse -Force -Path $recalboxThemeFolder
 }
+
+# Write-Host "INFO: Removing Requirements folder: $requirementsFolder"
+# if(Test-Path $requirementsFolder) {
+#     Remove-Item -Recurse -Force -Path $requirementsFolder
+# }
 
 Write-Host "INFO: Uninstall completed"
