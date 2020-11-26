@@ -110,6 +110,11 @@ $emulationStationBinary = [System.IO.Path]::Combine($emulationStationInstallFold
 $emulationStationIcon = [System.IO.Path]::Combine($emulationStationInstallFolder, "icon.ico")
 $emulationStationPortableBat = [System.IO.Path]::Combine($emulationStationInstallFolder, "launch_portable.bat")
 $emulationStationPortableWindowedBat = [System.IO.Path]::Combine($emulationStationInstallFolder, "launch_portable_windowed.bat")
+if(!(Test-Path $emulationStationPortableWindowedBat)) {
+    $batContents = "set HOME=%~dp0
+    emulationstation.exe --resolution 960 720 --windowed"
+    New-Item -Path $emulationStationInstallFolder -Name "launch_portable_windowed.bat" -ItemType File -Value $batContents
+}
 
 # Generate Emulation Station config file
 & "$emulationStationBinary"
