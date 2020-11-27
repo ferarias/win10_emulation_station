@@ -54,5 +54,4 @@ if(Test-Path $InstallDir) {
     Remove-Item -Recurse -Force -Path $InstallDir
 }
 
-
 Write-Host "INFO: Uninstall completed"

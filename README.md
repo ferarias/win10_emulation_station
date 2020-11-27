@@ -2,7 +2,7 @@
 
 # EmulationStation configured for Windows 10
 
-![Script working](https://github.com/Francommit/win10_emulation_station/workflows/Build/badge.svg)
+![Script working](https://github.com/ferarias/win10_emulation_station/workflows/Build/badge.svg)
 
 An auto-installer to set up a **portable** installation of [Emulation Station](http://www.emulationstation.org) on a 64-bit version of Windows 10.
 
@@ -19,7 +19,7 @@ An auto-installer to set up a **portable** installation of [Emulation Station](h
 
 - Single one liner to install everything:
 ```
-Set-ExecutionPolicy Bypass -Scope Process -Force;[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;Invoke-WebRequest "https://github.com/ferarias/win10_emulation_station/archive/1.0.0.zip" -OutFile "emulationStation.zip";Expand-Archive .\emulationStation.zip;cd .\emulationStation; cd .\win*;.\prepare.ps1
+Set-ExecutionPolicy Bypass -Scope Process -Force;[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;Invoke-WebRequest "https://github.com/ferarias/win10_emulation_station/archive/v2.0.0-rc1.zip" -OutFile "emulationStationInstall.zip";Expand-Archive .\emulationStationInstall.zip;cd .\emulationStationInstall; cd .\win*;.\prepare.ps1
 ```
 - Script complete when powershell spits out:
 ```

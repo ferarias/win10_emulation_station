@@ -4,6 +4,19 @@ param (
     [bool] $Portable = $False
 )
 
+Function Get-MyModule {
+    Param([string]$name)
+    if (-not(Get-Module -name $name)) {
+        if (Get-Module -ListAvailable |
+            Where-Object { $_.name -eq $name }) {
+            Import-Module -Name $name
+            $true
+        } #end if module available then import
+        else { $false } #module not available
+    } # end if not module
+    else { $true } #module already loaded
+} #end function get-MyModule
+
 function DownloadFiles {
     param ([String]$jsonDownloadOption)
     
@@ -91,12 +104,13 @@ DownloadFiles("other_downloads")
 GithubReleaseFiles
 
 # Prepare 7-zip
-Install-Module -Name 7Zip4Powershell -Scope CurrentUser -Force
+if(!(Get-MyModule -name "7Zip4Powershell")) { 
+    Install-Module -Name "7Zip4Powershell" -Scope CurrentUser -Force 
+}
 Expand-7Zip -ArchiveFileName "$requirementsFolder\7z1900.exe" -TargetPath "$requirementsFolder\7z\"
 
 
 # Install Emulation Station
-# Start-Process "$requirementsFolder\emulationstation_win32_latest.exe" -ArgumentList "/S" -Wait
 $emulationStationPackage = [System.IO.Path]::Combine($requirementsFolder, "emulationstation_win32_latest.zip");
 $emulationStationInstallFolder = [System.IO.Path]::Combine($InstallDir, "EmulationStation");
 if (Test-Path $emulationStationPackage) {
@@ -113,7 +127,7 @@ $emulationStationPortableWindowedBat = [System.IO.Path]::Combine($emulationStati
 if(!(Test-Path $emulationStationPortableWindowedBat)) {
     $batContents = "set HOME=%~dp0
     emulationstation.exe --resolution 960 720 --windowed"
-    New-Item -Path $emulationStationInstallFolder -Name "launch_portable_windowed.bat" -ItemType File -Value $batContents
+    New-Item -Path $emulationStationInstallFolder -Name "launch_portable_windowed.bat" -ItemType File -Value $batContents | Out-Null
 }
 
 # Generate Emulation Station config file
@@ -130,9 +144,11 @@ $systemsPath = "$env:userprofile\.emulationstation\systems"
 # Prepare Retroarch
 $retroArchTempPath = "$requirementsFolder\retroarch"
 $retroArchPath = "$systemsPath\retroarch\"
+Write-Host "INFO: Setting up RetroArch..."
 if(!(Test-Path $retroArchTempPath)) {
     $retroArchPackage = [System.IO.Path]::Combine($requirementsFolder, "RetroArch.7z");
     if (Test-Path $retroArchPackage) {
+        Write-Host "INFO: Extracting RetroArch..."
         Extract -Path $retroArchPackage -Destination $retroArchTempPath | Out-Null
     }
     else {
@@ -140,9 +156,10 @@ if(!(Test-Path $retroArchTempPath)) {
         exit -1
     }
 }
+Write-Host "INFO: Copying RetroArch files..."
 Copy-Item -Path $retroArchTempPath -Destination $retroArchPath -Recurse -Force
 $coresPath = [System.IO.Path]::Combine($retroArchPath, "cores");
-
+Write-Host "INFO: RetroArch setup complete."
 
 # NES Setup
 $nesCore = "$requirementsFolder\fceumm_libretro.dll.zip"
@@ -333,13 +350,13 @@ if (Test-Path $retroarchExecutable) {
 
 }
 else {
-    Write-Host "ERROR: Could not find retroarch.exe"
+    Write-Host "ERROR: Could not find RetroArch.exe"
     exit -1
 }
 
 
 # Tweak retroarch config!
-Write-Host "INFO: Replacing retroarch config"
+Write-Host "INFO: Replacing RetroArch config"
 $settingToFind = 'video_fullscreen = "false"'
 $settingToSet = 'video_fullscreen = "true"'
 (Get-Content $retroarchConfigPath) -replace $settingToFind, $settingToSet | Set-Content $retroarchConfigPath
@@ -449,7 +466,7 @@ Write-Host "INFO: Setup Gameboy"
 $gbPath = "$romPath\gb"
 New-Item -ItemType Directory -Force -Path $gbPath | Out-Null
 
-Write-Host "INFO: Setup Gameboy Colour"
+Write-Host "INFO: Setup Gameboy Color"
 $gbcPath = "$romPath\gbc"
 $gbcRom = "$requirementsFolder\star_heritage.zip" 
 if (Test-Path $gbcRom) {
@@ -461,7 +478,7 @@ else {
     exit -1
 }
 
-Write-Host "INFO: Setup Mastersystem"
+Write-Host "INFO: Setup Sega Mastersystem"
 $masterSystemPath = "$romPath\mastersystem"
 $masterSystemRom = "$requirementsFolder\WahMunchers-SMS-R2.zip" 
 if (Test-Path $masterSystemRom) {
@@ -477,7 +494,7 @@ Write-Host "INFO: Setup FBA"
 $fbaPath = "$romPath\fba"
 New-Item -ItemType Directory -Force -Path $fbaPath | Out-Null
 
-Write-Host "INFO: Atari2600 Setup"
+Write-Host "INFO: Setup Atari 2600"
 $atari2600Path = "$romPath\atari2600"
 $atari2600Rom = "$requirementsFolder\ramless_pong.bin"
 if (Test-Path $atari2600Rom) {
@@ -489,20 +506,20 @@ else {
     exit -1
 }
 
-Write-Host "INFO: MAME setup"
+Write-Host "INFO: Setup MAME"
 $mamePath = "$romPath\mame"
 New-Item -ItemType Directory -Force -Path $mamePath | Out-Null
 
 # WIP: Need to test and find freeware games for these emulators.
 # Need to write a bat to boot these
-Write-Host "INFO: ScummVm Setup"
+Write-Host "INFO: Setup ScummVm"
 $scummVmPath = "$romPath\scummvm"
 New-Item -ItemType Directory -Force -Path $scummVmPath | Out-Null
 
 $wiiuPath = "$romPath\wiiu"
 New-Item -ItemType Directory -Force -Path $wiiuPath | Out-Null
 
-Write-Host "INFO: NeogeoPocket Setup"
+Write-Host "INFO: Setup NEO-GEO Pocket"
 $neogeoPocketPath = "$romPath\ngp"
 $ngpRom = "$requirementsFolder\neopocket.zip"
 if (Test-Path $ngpRom) {
@@ -514,11 +531,11 @@ else {
     exit -1
 }
 
-Write-Host "INFO: Neogeo Setup"
+Write-Host "INFO: Setup NEO-GEO"
 $neogeoPath = "$romPath\neogeo"
 New-Item -ItemType Directory -Force -Path $neogeoPath | Out-Null
 
-Write-Host "INFO: MSX Setup"
+Write-Host "INFO: Setup MSX"
 $msxPath = "$romPath\msx"
 $msxCore = "$requirementsFolder\fmsx_libretro.dll.zip"
 if (Test-Path $msxCore) {
@@ -530,7 +547,7 @@ else {
     exit -1
 }
 
-Write-Host "INFO: Commodore 64 Setup"
+Write-Host "INFO: Setup Commodore 64"
 $commodore64Path = "$romPath\c64"
 $commodore64Core = "$requirementsFolder\vice_x64_libretro.dll.zip"
 if (Test-Path $commodore64Core) {
@@ -542,7 +559,7 @@ else {
     exit -1
 }
 
-Write-Host "INFO: Amiga Setup"
+Write-Host "INFO: Setup Commodore Amiga"
 $amigaPath = "$romPath\amiga"
 $amigaCore = "$requirementsFolder\puae_libretro.dll.zip"
 if (Test-Path $amigaCore) {
@@ -554,7 +571,7 @@ else {
     exit -1
 }
 
-Write-Host "INFO: Setup Atari7800"
+Write-Host "INFO: Setup Atari 7800"
 $atari7800Path = "$romPath\atari7800"
 $atari7800Core = "$requirementsFolder\prosystem_libretro.dll.zip"
 if (Test-Path $atari7800Core) {
@@ -566,7 +583,7 @@ else {
     exit -1
 }
 
-Write-Host "INFO: Setup Wii/Gaemcube"
+Write-Host "INFO: Setup Wii/GameCube"
 $gcPath = "$romPath\gc"
 $wiiPath = "$romPath\wii"
 $wiiRom = "$requirementsFolder\Homebrew.Channel.-.OHBC.wad"
@@ -868,7 +885,7 @@ Set-Content $esConfigFile -Value $newSettingsConfig
 $requiredTmpFolder = "$env:userprofile\.emulationstation\tmp\"
 New-Item -ItemType Directory -Force -Path $requiredTmpFolder | Out-Null
 
-Write-Host "INFO: Genrating Dolphin Config"
+Write-Host "INFO: Generating Dolphin Config"
 $dolphinConfigFile = "$env:userprofile\.emulationstation\systems\retroarch\saves\User\Config\Dolphin.ini"
 $dolphinConfigFolder = "$env:userprofile\.emulationstation\systems\retroarch\saves\User\Config\"
 $dolphinConfigFileContent = "[General]
@@ -1059,7 +1076,7 @@ Write-Output $dolphinConfigFileContent  > $dolphinConfigFile
 # New-Item -Path $path -Force | Out-Null
 # Set-ItemProperty -Path $path -Name 'CPUOverclocking' -Value '10'
 
-Write-Host "INFO: Adding scraper in"
+Write-Host "INFO: Adding scraper in $romPath"
 $scraperZip = "$requirementsFolder\scraper_windows_amd64*.zip"
 if (Test-Path $scraperZip) {
     Extract -Path $scraperZip -Destination $romPath | Out-Null
@@ -1135,6 +1152,5 @@ if($Portable) {
     $lnkEmulationStationWindowedDesktop.Arguments = "--resolution 1366 768 --windowed"
 }
 $lnkEmulationStationWindowedDesktop.Save() 
-
 
 Write-Host "INFO: Setup completed"
