@@ -35,7 +35,7 @@ INFO: Setup completed
 
 
 ## Optional Features and Tips
-------
+
 - If you prefer to run your scripts via context menu (right mouse button) but lack the abilitiy to run them in an admin session, you can just double-click the "powershell_run-as-admin.reg" file and accept the registry modification. It will add a new entry to the menu to do that easily.
 - If you use OneDrive to store your ROMs and saves, you can run the script onedrive.ps1 or you can modifify it to any other specific folder. Further instructions in comments
 - Some new themes shows videos: [es-theme-crt](https://github.com/PRElias/es-theme-crt)
@@ -58,7 +58,7 @@ INFO: Setup completed
 ## Uninstall
 
 ## Special Thanks
-------
+
 - [Francommit](https://github.com/Francommit) for the [original version](https://github.com/Francommit/win10_emulation_station) of the scripts.
 - [jrassa](https://github.com/jrassa/) for his up to date [compiled version of Emulation Station](https://github.com/jrassa/EmulationStation).
 - [Nesworld](http://www.nesworld.com/) for their open-source NES roms.
