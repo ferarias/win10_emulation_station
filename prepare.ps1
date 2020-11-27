@@ -104,7 +104,7 @@ DownloadFiles("other_downloads")
 GithubReleaseFiles
 
 # Prepare 7-zip
-if(!(Get-MyModule -name "7Zip4Powershell")) { 
+if (!(Get-MyModule -name "7Zip4Powershell")) { 
     Install-Module -Name "7Zip4Powershell" -Scope CurrentUser -Force 
 }
 Expand-7Zip -ArchiveFileName "$requirementsFolder\7z1900.exe" -TargetPath "$requirementsFolder\7z\"
@@ -124,7 +124,7 @@ $emulationStationBinary = [System.IO.Path]::Combine($emulationStationInstallFold
 $emulationStationIcon = [System.IO.Path]::Combine($emulationStationInstallFolder, "icon.ico")
 $emulationStationPortableBat = [System.IO.Path]::Combine($emulationStationInstallFolder, "launch_portable.bat")
 $emulationStationPortableWindowedBat = [System.IO.Path]::Combine($emulationStationInstallFolder, "launch_portable_windowed.bat")
-if(!(Test-Path $emulationStationPortableWindowedBat)) {
+if (!(Test-Path $emulationStationPortableWindowedBat)) {
     $batContents = "set HOME=%~dp0
     emulationstation.exe --resolution 960 720 --windowed"
     New-Item -Path $emulationStationInstallFolder -Name "launch_portable_windowed.bat" -ItemType File -Value $batContents | Out-Null
@@ -145,7 +145,7 @@ $systemsPath = "$env:userprofile\.emulationstation\systems"
 $retroArchTempPath = "$requirementsFolder\retroarch"
 $retroArchPath = "$systemsPath\retroarch\"
 Write-Host "INFO: Setting up RetroArch..."
-if(!(Test-Path $retroArchTempPath)) {
+if (!(Test-Path $retroArchTempPath)) {
     $retroArchPackage = [System.IO.Path]::Combine($requirementsFolder, "RetroArch.7z");
     if (Test-Path $retroArchPackage) {
         Write-Host "INFO: Extracting RetroArch..."
@@ -1088,12 +1088,13 @@ else {
 
 # Create Shortcuts
 $userProfileVariable = Get-ChildItem Env:UserProfile
-if($Portable) {
+if ($Portable) {
     Write-Host "INFO: Moving '$env:userprofile\.emulationstation' to '$emulationStationInstallFolder\.emulationstation'..."
     Robocopy "$env:userprofile\.emulationstation" "$emulationStationInstallFolder\.emulationstation" /MOVE /E /NFL /NDL /NJH /NJS /nc /ns
     $romsShortcut = "$emulationStationInstallFolder\.emulationstation\roms"
     $coresShortcut = "$emulationStationInstallFolder\.emulationstation\systems\retroarch\cores"
-} else {
+}
+else {
     $romsShortcut = $userProfileVariable.Value + "\.emulationstation\roms"
     $coresShortcut = $userProfileVariable.Value + "\.emulationstation\systems\retroarch\cores"
 }
@@ -1112,9 +1113,10 @@ $lnkCores.Save()
 $lnkEmulationStation = $wshshell.CreateShortcut("$InstallDir\EmulationStation.lnk")
 $lnkEmulationStation.WorkingDirectory = $emulationStationInstallFolder
 $lnkEmulationStation.IconLocation = $emulationStationIcon
-if($Portable) {
+if ($Portable) {
     $lnkEmulationStation.TargetPath = $emulationStationPortableBat
-} else {
+}
+else {
     $lnkEmulationStation.TargetPath = $emulationStationBinary
 }
 $lnkEmulationStation.Save() 
@@ -1122,9 +1124,10 @@ $lnkEmulationStation.Save()
 $lnkWindowed = $wshshell.CreateShortcut("$InstallDir\EmulationStation (Windowed).lnk")
 $lnkWindowed.WorkingDirectory = $emulationStationInstallFolder
 $lnkWindowed.IconLocation = $emulationStationIcon
-if($Portable) {
+if ($Portable) {
     $lnkWindowed.TargetPath = $emulationStationPortableWindowedBat
-} else {
+}
+else {
     $lnkWindowed.TargetPath = $emulationStationBinary
     $lnkWindowed.Arguments = "--resolution 1366 768 --windowed"
 }
@@ -1134,9 +1137,10 @@ $desktop = [System.Environment]::GetFolderPath('Desktop')
 $lnkEmulationStationDesktop = $wshshell.CreateShortcut("$desktop\EmulationStation.lnk")
 $lnkEmulationStationDesktop.WorkingDirectory = $emulationStationInstallFolder
 $lnkEmulationStationDesktop.IconLocation = $emulationStationIcon
-if($Portable) {
+if ($Portable) {
     $lnkEmulationStationDesktop.TargetPath = $emulationStationPortableBat
-} else {
+}
+else {
     $lnkEmulationStationDesktop.TargetPath = $emulationStationBinary
 }
 $lnkEmulationStationDesktop.Save() 
@@ -1145,9 +1149,10 @@ $lnkEmulationStationDesktop.Save()
 $lnkEmulationStationWindowedDesktop = $wshshell.CreateShortcut("$desktop\EmulationStation (Windowed).lnk")
 $lnkEmulationStationWindowedDesktop.WorkingDirectory = $emulationStationInstallFolder
 $lnkEmulationStationWindowedDesktop.IconLocation = $emulationStationIcon
-if($Portable) {
+if ($Portable) {
     $lnkEmulationStationWindowedDesktop.TargetPath = $emulationStationPortableWindowedBat
-} else {
+}
+else {
     $lnkEmulationStationWindowedDesktop.TargetPath = $emulationStationBinary
     $lnkEmulationStationWindowedDesktop.Arguments = "--resolution 1366 768 --windowed"
 }
