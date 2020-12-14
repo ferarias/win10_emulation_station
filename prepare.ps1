@@ -2,28 +2,47 @@
 using namespace System.IO
 
 param (
-    [Parameter(Mandatory)]
-    $InstallDir
+    [Parameter(Mandatory)]$InstallDir,
+    [String] $CustomRomsFolder
 )
 
 . .\functions.ps1
 
 # #############################################################################
-
 # Setup some basic directories and stuff
-Write-Host "INFO: Install directory is: $InstallDir"
 New-Item -ItemType Directory -Force -Path $InstallDir
+Write-Host "INFO: Install directory is $InstallDir"
+$ESRootFolder = [Path]::Combine($InstallDir, "EmulationStation");
+Write-Host "INFO: EmulationStation root directory is $ESRootFolder"
+$ESDataFolder = [Path]::Combine($ESRootFolder, ".emulationstation")
+Write-Host "INFO: EmulationStation data directory is $ESDataFolder"
+
+# ROMs folder
+if([String]::IsNullOrEmpty($CustomRomsFolder)) {
+    $RomsFolder = [Path]::Combine($ESDataFolder, "roms")
+} else {
+    if(-Not (Test-Path -Path $CustomRomsFolder)) {
+        Write-Error "ERROR: Custom ROMs folder $CustomRomsFolder does not exist!"
+        exit -1
+    }
+    $RomsFolder = $CustomRomsFolder
+}
+Write-Host "INFO: ROMs directory is $RomsFolder"
+
+$ESSystemsPath = [Path]::Combine($ESDataFolder , "systems")
+Write-Host "INFO: EmulationStation systems (emulators) directory is $ESSystemsPath"
+
 
 # Setup requiremens folder
-$requirementsFolder = "$PSScriptRoot/requirements"
+Write-Host "$PSScriptRoot"
+$requirementsFolder = [Path]::Combine("$PSScriptRoot", "requirements")
 Write-Host "INFO: Requirements directory is: $requirementsFolder"
 New-Item -ItemType Directory -Force -Path $requirementsFolder
 
 # Find downloads JSON file
-$scriptPath = $MyInvocation.MyCommand.Path
-$scriptDir = Split-Path $scriptPath
-$downloadsFile = "$scriptDir/download_list.json"
+$downloadsFile = [Path]::Combine("$PSScriptRoot", "download_list.json")
 Write-Host "INFO: Downloads file is: $downloadsFile"
+
 
 # Acquire files 
 DownloadFiles $downloadsFile "core" $requirementsFolder
@@ -40,52 +59,11 @@ Expand-7Zip -ArchiveFileName "$requirementsFolder\7z1900.exe" -TargetPath "$requ
 
 # #############################################################################
 # Install Emulation Station
-$ESZipPackage = [Path]::Combine($requirementsFolder, "emulationstation_win32_latest.zip");
-$ESRootFolder = [Path]::Combine($InstallDir, "EmulationStation");
-Write-Host "INFO: EmulationStation directory is: $ESRootFolder"
-if (Test-Path $ESZipPackage) {
-    Extract -Path $ESZipPackage -Destination $ESRootFolder | Out-Null
-}
-else {
-    Write-Host "ERROR: $ESZipPackage not found."
-    exit -1
-}
+SetupZip "$requirementsFolder/emulationstation_win32_latest.zip" "" $ESRootFolder
+SetupZip "$requirementsFolder/EmulationStation-Win32-continuous-master.zip" "" $ESRootFolder 
 
-Write-Host "INFO: Update EmulationStation binaries"
-$updatedESBinaries = "$requirementsFolder\EmulationStation-Win32-continuous-master.zip"
-if (Test-Path $updatedESBinaries) {
-    Extract -Path $updatedESBinaries -Destination $ESRootFolder | Out-Null
-}
-else {
-    Write-Host "ERROR: $updatedESBinaries not found."
-    exit -1
-}
 
-$ESBatName = "launch_portable.bat"
-$ESBatWindowed = "launch_portable_windowed.bat"
-$ESExePath = [Path]::Combine($ESRootFolder, "emulationstation.exe")
-$ESIconPath = [Path]::Combine($ESRootFolder, "icon.ico")
-$ESPortableBat = [Path]::Combine($ESRootFolder, $ESBatName)
-$ESPortableWindowedBat = [Path]::Combine($ESRootFolder, $ESBatWindowed)
-if (!(Test-Path $ESPortableBat)) {
-    $batContents = "set HOME=%~dp0
-    emulationstation.exe"
-    New-Item -Path $ESRootFolder -Name $ESBatName -ItemType File -Value $batContents | Out-Null
-}
-if (!(Test-Path $ESPortableWindowedBat)) {
-    $batContents = "set HOME=%~dp0
-    emulationstation.exe --resolution 960 720 --windowed"
-    New-Item -Path $ESRootFolder -Name $ESBatWindowed -ItemType File -Value $batContents | Out-Null
-}
 
-# Emulation Station config file
-$ESDataFolder = [Path]::Combine($ESRootFolder, ".emulationstation")
-$RomsFolder = "$ESDataFolder\roms"
-
-$ESSystemsPath = [Path]::Combine($ESDataFolder , "systems")
-$ESTempFolder = [Path]::Combine($ESDataFolder , "tmp/")
-Write-Host "INFO: Creating tmp folder in $ESTempFolder"
-New-Item -ItemType Directory -Force -Path $ESTempFolder | Out-Null
 
 
 # #############################################################################
@@ -330,6 +308,22 @@ else {
 
 # Create Shortcuts
 Write-Host "INFO: Creating shortcuts"
+$ESBatName = "launch_portable.bat"
+$ESBatWindowed = "launch_portable_windowed.bat"
+$ESIconPath = [Path]::Combine($ESRootFolder, "icon.ico")
+$ESPortableBat = [Path]::Combine($ESRootFolder, $ESBatName)
+$ESPortableWindowedBat = [Path]::Combine($ESRootFolder, $ESBatWindowed)
+if (!(Test-Path $ESPortableBat)) {
+    $batContents = "set HOME=%~dp0
+    emulationstation.exe"
+    New-Item -Path $ESRootFolder -Name $ESBatName -ItemType File -Value $batContents | Out-Null
+}
+if (!(Test-Path $ESPortableWindowedBat)) {
+    $batContents = "set HOME=%~dp0
+    emulationstation.exe --resolution 960 720 --windowed"
+    New-Item -Path $ESRootFolder -Name $ESBatWindowed -ItemType File -Value $batContents | Out-Null
+}
+
 Add-Shortcut -ShortcutLocation "$InstallDir\Roms.lnk" -ShortcutTarget $RomsFolder
 Add-Shortcut -ShortcutLocation "$InstallDir\Cores.lnk" -ShortcutTarget "$ESDataFolder\systems\retroarch\cores"
 Add-Shortcut -ShortcutLocation "$InstallDir\EmulationStation.lnk" -ShortcutTarget $ESPortableBat -ShortcutIcon $ESIconPath -WorkingDir $ESRootFolder
