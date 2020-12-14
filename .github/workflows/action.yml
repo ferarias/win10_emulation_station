@@ -27,4 +27,4 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Powershell script runner
-        run: .\prepare.ps1 -InstallDir $Env:Temp -Portable $False
+        run: .\prepare.ps1 -InstallDir $Env:Temp
