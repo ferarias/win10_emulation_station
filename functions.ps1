@@ -142,7 +142,7 @@ function Add-Rom {
                 Extract -Path $rom -Destination $path | Out-Null
             }
             else {
-                Move-Item -Path $rom -Destination $path | Out-Null
+                Move-Item -Path $rom -Destination $path -Force | Out-Null
             }
 
         }
