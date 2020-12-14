@@ -26,8 +26,10 @@ $downloadsFile = "$scriptDir/download_list.json"
 Write-Host "INFO: Downloads file is: $downloadsFile"
 
 # Acquire files 
-DownloadFiles $downloadsFile "downloads" $requirementsFolder
-DownloadFiles $downloadsFile "other_downloads" $requirementsFolder
+DownloadFiles $downloadsFile "core" $requirementsFolder
+DownloadFiles $downloadsFile "lr-cores" $requirementsFolder
+DownloadFiles $downloadsFile "freeware-games" $requirementsFolder
+DownloadFiles $downloadsFile "misc" $requirementsFolder
 GithubReleaseFiles $downloadsFile $requirementsFolder
 
 # Prepare 7-zip
@@ -79,16 +81,6 @@ if (!(Test-Path $ESPortableWindowedBat)) {
 # Emulation Station config file
 $ESDataFolder = [Path]::Combine($ESRootFolder, ".emulationstation")
 $RomsFolder = "$ESDataFolder\roms"
-
-$Env:HOME = $ESRootFolder
-Start-Process -FilePath $ESExePath -ArgumentList ("--resolution 800 600", "--windowed") -WorkingDirectory $ESRootFolder
-$ESSystemsConfigPath = "$ESDataFolder/es_systems.cfg"
-while (!(Test-Path $ESSystemsConfigPath)) { 
-    Write-Host "INFO: Checking for config file..."
-    Start-Sleep 5
-}
-Write-Host "INFO: Config file generated at $ESSystemsConfigPath. Stopping ES..."
-Stop-Process -Name "emulationstation"
 
 $ESSystemsPath = [Path]::Combine($ESDataFolder , "systems")
 $ESTempFolder = [Path]::Combine($ESDataFolder , "tmp/")
@@ -175,7 +167,7 @@ SetupZip "$requirementsFolder/pcsx2-1.6.0-setup.exe" "`$TEMP/PCSX2 1.6.0" "$ESSy
 SetupZip "$requirementsFolder/dolphin-master-5.0-12716-x64.7z" "Dolphin-x64" "$ESSystemsPath/dolphin"
 $dolphinBinary = "$ESSystemsPath/dolphin/Dolphin.exe"
 Write-Host "INFO: Generating Dolphin Config"
-New-Item -Path "$ESSystemsPath/dolphin/portable.txt" -ItemType File | Out-Null
+New-Item -Path "$ESSystemsPath/dolphin/portable.txt" -ItemType File -Force | Out-Null
 New-Item -Path "$ESSystemsPath/dolphin/User/Config" -ItemType Directory -Force | Out-Null
 $dolphinConfigFile = "$ESSystemsPath/dolphin/User/Config/Dolphin.ini"
 $newDolphinConfigFile = [Path]::Combine($PSScriptRoot, "configs", "Dolphin.ini")
@@ -235,11 +227,11 @@ Add-Rom "" "$RomsFolder\scummvm"
 
 # #############################################################################
 # Set EmulationStation configurations
-$esConfigFile = "$ESDataFolder\es_settings.cfg"
-Write-Host "INFO: Generating ES settings file at $esConfigFile"
+$ESSettingsFile = "$ESDataFolder\es_settings.cfg"
+Write-Host "INFO: Generating ES settings file at $ESSettingsFile"
 $newEsConfigFile = [Path]::Combine($PSScriptRoot, "configs", "es_settings.cfg")
-Copy-Item -Path $newEsConfigFile -Destination $esConfigFile
-(Get-Content $esConfigFile) -replace "{ESInstallFolder}", $ESRootFolder | Set-Content $esConfigFile
+Copy-Item -Path $newEsConfigFile -Destination $ESSettingsFile -Force
+(Get-Content $ESSettingsFile) -replace "{ESInstallFolder}", $ESRootFolder | Set-Content $ESSettingsFile
 
 # Set a default keyboard mapping for EmulationStation
 $esInputConfigFile = "$ESDataFolder\es_input.cfg"
@@ -248,6 +240,7 @@ $newEsInputConfigFile = [Path]::Combine($PSScriptRoot, "configs", "es_input.cfg"
 Copy-Item -Path $newEsInputConfigFile -Destination $esInputConfigFile
 
 # Setup EmulationStation available systems
+$ESSystemsConfigPath = "$ESDataFolder/es_systems.cfg"
 Write-Host "INFO: Setting up EmulationStation Systems Config at $ESSystemsConfigPath"
 $systems = @{
     "nes"          = @("Nintendo Entertainment System", ".nes .NES", "$retroarchExecutable -L $coresPath\fceumm_libretro.dll %ROM%", "nes", "nes");
@@ -299,6 +292,7 @@ Write-Host "INFO: Creating ROM directories and filling with freeware ROMs $path"
 Add-Rom "$requirementsFolder\assimilate_full.zip" "$RomsFolder\nes"
 Add-Rom "$requirementsFolder\pom-twin.zip" "$RomsFolder\n64"
 Add-Rom "$requirementsFolder\uranus0ev_fix.gba" "$RomsFolder\gba"
+Add-Rom "$requirementsFolder\T2002.gba" "$RomsFolder\gba"
 Add-Rom "$requirementsFolder\rickdangerous.gen" "$RomsFolder\megadrive"
 Add-Rom "$requirementsFolder\N-Warp Daisakusen V1.1.smc" "$RomsFolder\snes"
 Add-Rom "$requirementsFolder\Marilyn_In_the_Magic_World_(010a).7z" "$RomsFolder\psx"
