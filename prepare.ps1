@@ -62,10 +62,6 @@ Expand-7Zip -ArchiveFileName "$requirementsFolder\7z1900.exe" -TargetPath "$requ
 SetupZip "$requirementsFolder/emulationstation_win32_latest.zip" "" $ESRootFolder
 SetupZip "$requirementsFolder/EmulationStation-Win32-continuous-master.zip" "" $ESRootFolder 
 
-
-
-
-
 # #############################################################################
 # Install Retroarch
 $retroArchTempPath = "$requirementsFolder\retroarch"
