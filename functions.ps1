@@ -8,11 +8,11 @@ Function Get-MyModule {
             Where-Object { $_.name -eq $name }) {
             Import-Module -Name $name
             $true
-        } #end if module available then import
-        else { $false } #module not available
-    } # end if not module
-    else { $true } #module already loaded
-} #end function get-MyModule
+        } 
+        else { $false }
+    } 
+    else { $true }
+} 
 
 function Get-RemoteFiles {
     param (
@@ -49,10 +49,10 @@ function Get-Releases {
     Get-Content $jsonFile | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
 
         $repo = $_.repo
-        $file = $_.file
         $releases = "https://api.github.com/repos/$repo/releases"
         $tag = (Invoke-WebRequest $releases -UseBasicParsing | ConvertFrom-Json)[0].tag_name
     
+        $file = $_.file
         $url = "https://github.com/$repo/releases/download/$tag/$file"
         $name = $file.Split(".")[0]
     
@@ -81,22 +81,6 @@ function Extract([string]$Path, [string]$Destination) {
     & $sevenZipApplication $sevenZipArguments | Out-Null
 }
 
-function CopyCore {
-    Param(
-        [String]$fromFolder,
-        [String]$coreZip,
-        [String]$coresPath
-    )
-    $core = "$fromFolder\$coreZip"
-    if (Test-Path $core) {
-        Extract -Path $core -Destination $coresPath | Out-Null
-    }
-    else {
-        Write-Host "ERROR: $core not found."
-        # exit -1
-    }
-}
-
 function Add-Rom {
     param(
         [String]$zipFile,
@@ -106,7 +90,7 @@ function Add-Rom {
         # Create target directory
         New-Item -ItemType Directory -Force -Path $targetFolder | Out-Null
         if ( $zipFile.EndsWith("zip") -or $zipFile.EndsWith("7z") -or $zipFile.EndsWith("gz") ) {
-            SetupZip $zipFile "" $targetFolder
+            Expand-PackedFile $zipFile $targetFolder
         }
         else {
             Move-Item -Path $zipFile -Destination $targetFolder -Force | Out-Null
@@ -119,19 +103,19 @@ function Add-Rom {
     }
 }
 
-function SetupZip {
+function Expand-PackedFile {
     param (
-        [String]$zipFile,
-        [string]$zipFolderToCopy,
-        [String]$targetFolder
+        [String]$archiveFile,
+        [String]$targetFolder,
+        [string]$zipFolderToCopy
     )
     # System Setup
-    if (Test-Path $zipFile) {
+    if (Test-Path $archiveFile) {
         # Create target directory
         New-Item -ItemType Directory -Force -Path $targetFolder | Out-Null
         # Extract to a temp folder
         $tempFolder = "$requirementsFolder/temp/"
-        Extract -Path $zipFile -Destination $tempFolder | Out-Null
+        Extract -Path $archiveFile -Destination $tempFolder | Out-Null
         # Move files to the final directory in systems folder
         if ($zipFolderToCopy -eq "") {
             Robocopy.exe $tempFolder $targetFolder /E /NFL /NDL /NJH /NJS /nc /ns /np /MOVE | Out-Null
@@ -142,7 +126,7 @@ function SetupZip {
         }
     }
     else {
-        Write-Host "ERROR: $zipFile not found."
+        Write-Host "ERROR: $archiveFile not found."
         exit -1
     }
 }
@@ -188,10 +172,10 @@ function Add-Shortcut {
     $wshshell = New-Object -ComObject WScript.Shell
     $link = $wshshell.CreateShortcut($ShortcutLocation)
     $link.TargetPath = $ShortcutTarget
-    if(-Not [String]::IsNullOrEmpty($WorkingDir)) {
+    if (-Not [String]::IsNullOrEmpty($WorkingDir)) {
         $link.WorkingDirectory = $WorkingDir
     }
-    if(-Not [String]::IsNullOrEmpty($ShortcutIcon)) {
+    if (-Not [String]::IsNullOrEmpty($ShortcutIcon)) {
         $link.IconLocation = $ShortcutIcon
     }
     $link.Save() 

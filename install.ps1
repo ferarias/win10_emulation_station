@@ -44,12 +44,13 @@ Write-Host "INFO: EmulationStation themes directory is $ESThemesPath"
 
 
 # #############################################################################
-# Acquire required files and leave them in a folder
+# Acquire required files and leave them in a folder for later use
+$downloadsFolder = [Path]::Combine("$PSScriptRoot", "downloads")
+Write-Host "INFO: Downloads directory is: $downloadsFolder"
+
 $requirementsFolder = [Path]::Combine("$PSScriptRoot", "requirements")
 Write-Host "INFO: Requirements directory is: $requirementsFolder"
 New-Item -ItemType Directory -Force -Path $requirementsFolder
-
-$downloadsFolder = [Path]::Combine("$PSScriptRoot", "downloads")
 
 # Acquire some basic software required
 Get-ChildItem $downloadsFolder -Filter "*-downloads.json" | ForEach-Object {
@@ -79,8 +80,8 @@ Expand-7Zip -ArchiveFileName "$requirementsFolder\7z1900.exe" -TargetPath "$requ
 
 # #############################################################################
 # Install Emulation Station
-SetupZip "$requirementsFolder/emulationstation_win32_latest.zip" "" $ESRootFolder
-SetupZip "$requirementsFolder/EmulationStation-Win32-continuous-master.zip" "" $ESRootFolder 
+Expand-PackedFile "$requirementsFolder/emulationstation_win32_latest.zip" $ESRootFolder
+Expand-PackedFile "$requirementsFolder/EmulationStation-Win32-continuous-master.zip" $ESRootFolder 
 
 # #############################################################################
 # Install Retroarch
@@ -106,22 +107,28 @@ $coresPath = [Path]::Combine($retroArchPath, "cores");
 $coresFile = [Path]::Combine($downloadsFolder, "lr-cores-downloads.json");
 
 Get-Content $coresFile | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
-    CopyCore $requirementsFolder $_.file $coresPath
+    $coreZip = [Path]::Combine($requirementsFolder, $_.file)
+    if (Test-Path $coreZip) {
+        Extract -Path $coreZip -Destination $coresPath | Out-Null
+    }
+    else {
+        Write-Host "ERROR: $coreZip not found."
+    }
 }
 
 # #############################################################################
 # Setup other systems
 # PSX Setup
-SetupZip "$requirementsFolder/ePSXe205.zip" "" "$ESSystemsPath/epsxe"
+Expand-PackedFile "$requirementsFolder/ePSXe205.zip" "$ESSystemsPath/epsxe"
 
 # CEMU Setup
-SetupZip "$requirementsFolder/cemu_1.22.0.zip" "cemu_1.22.0" "$ESSystemsPath/cemu"
+Expand-PackedFile "$requirementsFolder/cemu_1.22.0.zip" "$ESSystemsPath/cemu" "cemu_1.22.0"
 
 # PS2 Setup
-SetupZip "$requirementsFolder/pcsx2-1.6.0-setup.exe" "`$TEMP/PCSX2 1.6.0" "$ESSystemsPath/pcsx2"
+Expand-PackedFile "$requirementsFolder/pcsx2-1.6.0-setup.exe" "$ESSystemsPath/pcsx2" "`$TEMP/PCSX2 1.6.0"
 
 # Dolphin Setup
-SetupZip "$requirementsFolder/dolphin-master-5.0-12716-x64.7z" "Dolphin-x64" "$ESSystemsPath/dolphin"
+Expand-PackedFile "$requirementsFolder/dolphin-master-5.0-12716-x64.7z" "$ESSystemsPath/dolphin" "Dolphin-x64"
 $dolphinBinary = "$ESSystemsPath/dolphin/Dolphin.exe"
 Write-Host "INFO: Generating Dolphin Config"
 New-Item -Path "$ESSystemsPath/dolphin/portable.txt" -ItemType File -Force | Out-Null
@@ -238,18 +245,26 @@ else {
 }
 
 # #############################################################################
-# Add free roms
-
 # Path creation + Open-Source / Freeware Rom population
 Write-Host "INFO: Creating ROM directories and filling with freeware ROMs $path"
 Get-Content $freeGamesFile | ConvertFrom-Json | Select-Object -ExpandProperty games | ForEach-Object {
-    $file = $_.file
-    if([String]::IsNullOrEmpty( $file ) ) {
+    if([String]::IsNullOrEmpty( $_.file ) ) {
         continue;
     }
-    $platform = $_.platform
+    $sourceFile = [Path]::Combine($requirementsFolder, $_.file)
+    $targetFolder = [Path]::Combine($RomsFolder, $_.platform)
 
-    Add-Rom "$requirementsFolder\$file" "$RomsFolder\$platform"
+    if (Test-Path $sourceFile) {
+        if ( $sourceFile.EndsWith("zip") -or $sourceFile.EndsWith("7z") -or $sourceFile.EndsWith("gz") ) {
+            Expand-PackedFile $sourceFile $targetFolder
+        }
+        else {
+            Move-Item -Path $sourceFile -Destination $targetFolder -Force | Out-Null
+        }
+    }
+    else {
+        Write-Host "Warning: $sourceFile not found."
+    }
 }
 
 # TODO: find/test freeware games for these emulators.
