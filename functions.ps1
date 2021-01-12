@@ -24,10 +24,20 @@ function Get-RemoteFiles {
 
     Get-Content $jsonFile | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
     
-        $url = $_.url
         $file = $_.file
-        $output = "$targetDir\$file"
-
+        $url = $_.url
+        $repo = $_.repo
+        if($Null -ne $repo) {
+            # This is a GitHub repo. We need to find out the latest tag and then build the URI to that release file
+            $releases = "https://api.github.com/repos/$repo/releases"
+            $tag = (Invoke-WebRequest $releases -UseBasicParsing | ConvertFrom-Json)[0].tag_name
+            $url = "https://github.com/$repo/releases/download/$tag/$file"
+            $name = $file.Split(".")[0]
+            $zip = "$name-$tag.zip"
+            $output = "$targetDir\$zip"
+        } else {
+            $output = "$targetDir\$file"
+        }
         if (![System.IO.File]::Exists($output)) {
     
             Write-Host "INFO: Downloading $file"
@@ -37,48 +47,6 @@ function Get-RemoteFiles {
             Write-Host $file "INFO: Already exists... skipping download."
         }
     }
-}
-function Get-Releases {
-    param (
-        [parameter(Mandatory = $true)][string]$jsonFile,
-        [parameter(Mandatory = $true)][string]$targetDir
-    )
-
-    Write-Host "Starting downloading of GitHub release files from '$jsonFile'..."
-    
-    Get-Content $jsonFile | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
-
-        $repo = $_.repo
-        $releases = "https://api.github.com/repos/$repo/releases"
-        $tag = (Invoke-WebRequest $releases -UseBasicParsing | ConvertFrom-Json)[0].tag_name
-    
-        $file = $_.file
-        $url = "https://github.com/$repo/releases/download/$tag/$file"
-        $name = $file.Split(".")[0]
-    
-        $zip = "$name-$tag.zip"
-        $output = "$targetDir\$zip"
-
-        if (![System.IO.File]::Exists($output)) {
-    
-            Write-Host "INFO: Downloading $file"
-            Invoke-WebRequest $url -Out $output    
-        }
-        else {
-            Write-Host $file "INFO: Already exists... skipping download."
-        }
-    }
-}
-
-function Extract([string]$Path, [string]$Destination) {
-    $sevenZipApplication = "$requirementsFolder\7z\7z.exe"
-    $sevenZipArguments = @(
-        'x'                     ## eXtract files with full paths
-        '-y'                    ## assume Yes on all queries
-        "`"-o$($Destination)`"" ## set Output directory
-        "`"$($Path)`""          ## <archive_name>
-    )
-    & $sevenZipApplication $sevenZipArguments | Out-Null
 }
 
 function Add-Rom {
@@ -129,6 +97,17 @@ function Expand-PackedFile {
         Write-Host "ERROR: $archiveFile not found."
         exit -1
     }
+}
+
+function Extract([string]$Path, [string]$Destination) {
+    $sevenZipApplication = "$requirementsFolder\7z\7z.exe"
+    $sevenZipArguments = @(
+        'x'                     ## eXtract files with full paths
+        '-y'                    ## assume Yes on all queries
+        "`"-o$($Destination)`"" ## set Output directory
+        "`"$($Path)`""          ## <archive_name>
+    )
+    & $sevenZipApplication $sevenZipArguments | Out-Null
 }
 
 function Write-ESSystemsConfig {

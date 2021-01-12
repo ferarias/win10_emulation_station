@@ -45,8 +45,9 @@ Write-Host "INFO: EmulationStation themes directory is $ESThemesPath"
 
 # #############################################################################
 # Acquire required files and leave them in a folder for later use
+# Look into the downloads folder to see what downloads are configured
 $downloadsFolder = [Path]::Combine("$PSScriptRoot", "downloads")
-Write-Host "INFO: Downloads directory is: $downloadsFolder"
+Write-Host "INFO: Downloads directory is: $downloadsFolder. Looking for download files here..."
 
 $requirementsFolder = [Path]::Combine("$PSScriptRoot", "requirements")
 Write-Host "INFO: Requirements directory is: $requirementsFolder"
@@ -56,12 +57,6 @@ New-Item -ItemType Directory -Force -Path $requirementsFolder
 Get-ChildItem $downloadsFolder -Filter "*-downloads.json" | ForEach-Object {
     Write-Host "INFO: Downloading core software from: $_"
     Get-RemoteFiles $_.FullName $requirementsFolder
-}
-
-# Acquire github releases
-Get-ChildItem $downloadsFolder -Filter "*-releases.json" | ForEach-Object {
-    Write-Host "INFO: Downloading releases in GitHub from: $_"
-    Get-Releases $_.FullName $requirementsFolder
 }
 
 # Acquire freeware games
@@ -84,15 +79,15 @@ Expand-PackedFile "$requirementsFolder/emulationstation_win32_latest.zip" $ESRoo
 Expand-PackedFile "$requirementsFolder/EmulationStation-Win32-continuous-master.zip" $ESRootFolder 
 
 # #############################################################################
-# Install Retroarch
-$retroArchTempPath = "$requirementsFolder\retroarch"
-$retroArchPath = "$ESSystemsPath\retroarch\"
-Write-Host "INFO: Setting up RetroArch in $retroArchPath..."
-if (!(Test-Path $retroArchTempPath)) {
+# Install Retroarch system
+$retroArchSourcePath = "$requirementsFolder\retroarch"
+$retroArchInstallPath = "$ESSystemsPath\retroarch\"
+Write-Host "INFO: Setting up RetroArch in $retroArchInstallPath..."
+if (!(Test-Path $retroArchSourcePath)) {
     $retroArchPackage = [Path]::Combine($requirementsFolder, "RetroArch.7z");
     if (Test-Path $retroArchPackage) {
         Write-Host "INFO: Extracting RetroArch..."
-        Extract -Path $retroArchPackage -Destination $retroArchTempPath | Out-Null
+        Expand-PackedFile $retroArchPackage $retroArchSourcePath | Out-Null
     }
     else {
         Write-Host "ERROR: $retroArchBinary not found."
@@ -100,16 +95,16 @@ if (!(Test-Path $retroArchTempPath)) {
     }
 }
 Write-Host "INFO: Copying RetroArch files. This may take a while, so be patient..."
-Robocopy.exe $retroArchTempPath $retroArchPath /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+Robocopy.exe $retroArchSourcePath $retroArchInstallPath /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
 
 # Install Retroarch cores
-$coresPath = [Path]::Combine($retroArchPath, "cores");
+$coresPath = [Path]::Combine($retroArchInstallPath, "cores");
 $coresFile = [Path]::Combine($downloadsFolder, "lr-cores-downloads.json");
 
 Get-Content $coresFile | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
     $coreZip = [Path]::Combine($requirementsFolder, $_.file)
     if (Test-Path $coreZip) {
-        Extract -Path $coreZip -Destination $coresPath | Out-Null
+        Expand-PackedFile $coreZip $coresPath | Out-Null
     }
     else {
         Write-Host "ERROR: $coreZip not found."
@@ -139,8 +134,8 @@ Copy-Item -Path $newDolphinConfigFile -Destination $dolphinConfigFile -Force
 (Get-Content $dolphinConfigFile) -replace "{ESSystemsPath}", $ESSystemsPath | Set-Content $dolphinConfigFile
 
 # Start Retroarch and generate a config.
-$retroarchExecutable = "$retroArchPath\retroarch.exe"
-$retroarchConfigPath = "$retroArchPath\retroarch.cfg"
+$retroarchExecutable = "$retroArchInstallPath\retroarch.exe"
+$retroarchConfigPath = "$retroArchInstallPath\retroarch.cfg"
 
 if (Test-Path $retroarchExecutable) {
     
@@ -235,7 +230,7 @@ Write-Host "INFO: Setting up Emulation Station theme recalbox-backport"
 $themeFile = "$requirementsFolder\recalbox-backport-v2-recalbox-backport-v2.1.zip"
 $themePath = "$ESThemesPath\recalbox-backport\"
 if (Test-Path $themeFile) {
-    Extract -Path $themeFile -Destination $requirementsFolder | Out-Null
+    Expand-PackedFile $themeFile $requirementsFolder | Out-Null
     $themesFolder = "$requirementsFolder\recalbox-backport\"
     robocopy $themesFolder $themePath /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
 }
@@ -246,24 +241,29 @@ else {
 
 # #############################################################################
 # Path creation + Open-Source / Freeware Rom population
-Write-Host "INFO: Creating ROM directories and filling with freeware ROMs $path"
-Get-Content $freeGamesFile | ConvertFrom-Json | Select-Object -ExpandProperty games | ForEach-Object {
-    if([String]::IsNullOrEmpty( $_.file ) ) {
-        continue;
-    }
-    $sourceFile = [Path]::Combine($requirementsFolder, $_.file)
-    $targetFolder = [Path]::Combine($RomsFolder, $_.platform)
-
-    if (Test-Path $sourceFile) {
-        if ( $sourceFile.EndsWith("zip") -or $sourceFile.EndsWith("7z") -or $sourceFile.EndsWith("gz") ) {
-            Expand-PackedFile $sourceFile $targetFolder
+Write-Host "INFO: Creating ROM directories and filling with freeware ROMs in $RomsFolder"
+Get-ChildItem $downloadsFolder -Filter "*-games.json" | ForEach-Object {
+    Write-Host "INFO: Obtaining freeware ROMs from: $_"
+    Get-Content $_.FullName | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
+        if([String]::IsNullOrEmpty( $_.file ) ) {
+            continue;
+        }
+        $sourceFile = [Path]::Combine($requirementsFolder, $_.file)
+        $targetFolder = [Path]::Combine($RomsFolder, $_.platform)
+        if ((Test-Path $targetFolder) -ne $true) {
+            New-Item -ItemType Directory -Force -Path $targetFolder | Out-Null
+        }
+        if (Test-Path $sourceFile) {
+            if ( $sourceFile.EndsWith("zip") -or $sourceFile.EndsWith("7z") -or $sourceFile.EndsWith("gz") ) {
+                Expand-PackedFile $sourceFile $targetFolder
+            }
+            else {
+                Move-Item -Path $sourceFile -Destination $targetFolder -Force | Out-Null
+            }
         }
         else {
-            Move-Item -Path $sourceFile -Destination $targetFolder -Force | Out-Null
+            Write-Host "Warning: $sourceFile not found."
         }
-    }
-    else {
-        Write-Host "Warning: $sourceFile not found."
     }
 }
 
@@ -287,7 +287,7 @@ New-Item -ItemType Directory -Force -Path "$RomsFolder\scummvm"
 Write-Host "INFO: Adding scraper in $RomsFolder"
 $scraperZip = "$requirementsFolder\scraper_windows_amd64*.zip"
 if (Test-Path $scraperZip) {
-    Extract -Path $scraperZip -Destination $RomsFolder | Out-Null
+    Expand-PackedFile $scraperZip $RomsFolder | Out-Null
 }
 else {
     Write-Host "ERROR: $scraperZip not found."

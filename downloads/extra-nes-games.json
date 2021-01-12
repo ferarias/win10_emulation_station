@@ -107,7 +107,8 @@
         },
         {
             "file": "nes_virus_cleaner.nes",
-            "url": "http://www.nesworld.com/homebrew/nes_virus_cleaner.nes"
+            "url": "http://www.nesworld.com/homebrew/nes_virus_cleaner.nes",
+            "platform": "nes"
         },
         {
             "file": "pitfall.zip",
