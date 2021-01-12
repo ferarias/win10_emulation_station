@@ -8,7 +8,7 @@
             "name": "PowerShell: Launch Script",
             "type": "PowerShell",
             "request": "launch",
-            "script": "${workspaceFolder}/prepare.ps1",
+            "script": "${workspaceFolder}/install.ps1",
             "cwd": "${workspaceFolder}","args": ["-InstallDir D:\\em", "-CustomRomsFolder D:\\ROM"]
         }
     ]
