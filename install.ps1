@@ -74,14 +74,14 @@ if (!(Get-MyModule -name "7Zip4Powershell")) {
 Expand-7Zip -ArchiveFileName "$requirementsFolder\7z1900.exe" -TargetPath "$requirementsFolder\7z\"
 
 # #############################################################################
-# Install Emulation Station
+# Install Emulation Station binaries
 Expand-PackedFile "$requirementsFolder/emulationstation_win32_latest.zip" $ESRootFolder
 Expand-PackedFile "$requirementsFolder/EmulationStation-Win32-continuous-master.zip" $ESRootFolder 
 
 # #############################################################################
 # Install Retroarch system
-$retroArchSourcePath = "$requirementsFolder\retroarch"
-$retroArchInstallPath = "$ESSystemsPath\retroarch\"
+$retroArchSourcePath = [Path]::Combine($requirementsFolder, "retroarch")
+$retroArchInstallPath = [Path]::Combine($ESSystemsPath, "retroarch")
 Write-Host "INFO: Setting up RetroArch in $retroArchInstallPath..."
 if (!(Test-Path $retroArchSourcePath)) {
     $retroArchPackage = [Path]::Combine($requirementsFolder, "RetroArch.7z");
@@ -98,31 +98,29 @@ Write-Host "INFO: Copying RetroArch files. This may take a while, so be patient.
 Robocopy.exe $retroArchSourcePath $retroArchInstallPath /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
 
 # Install Retroarch cores
-$coresPath = [Path]::Combine($retroArchInstallPath, "cores");
+$retroArchCoresPath = [Path]::Combine($retroArchInstallPath, "cores");
 $coresFile = [Path]::Combine($downloadsFolder, "lr-cores-downloads.json");
 
 Get-Content $coresFile | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
     $coreZip = [Path]::Combine($requirementsFolder, $_.file)
     if (Test-Path $coreZip) {
-        Expand-PackedFile $coreZip $coresPath | Out-Null
+        Expand-PackedFile $coreZip $retroArchCoresPath | Out-Null
     }
     else {
         Write-Host "ERROR: $coreZip not found."
     }
 }
 
-# #############################################################################
-# Setup other systems
-# PSX Setup
+# Setup PSX system
 Expand-PackedFile "$requirementsFolder/ePSXe205.zip" "$ESSystemsPath/epsxe"
 
-# CEMU Setup
+# Setup CEMU system
 Expand-PackedFile "$requirementsFolder/cemu_1.22.0.zip" "$ESSystemsPath/cemu" "cemu_1.22.0"
 
-# PS2 Setup
+# Setup PS2 system
 Expand-PackedFile "$requirementsFolder/pcsx2-1.6.0-setup.exe" "$ESSystemsPath/pcsx2" "`$TEMP/PCSX2 1.6.0"
 
-# Dolphin Setup
+# Setup Dolphin system
 Expand-PackedFile "$requirementsFolder/dolphin-master-5.0-12716-x64.7z" "$ESSystemsPath/dolphin" "Dolphin-x64"
 $dolphinBinary = "$ESSystemsPath/dolphin/Dolphin.exe"
 Write-Host "INFO: Generating Dolphin Config"
@@ -199,28 +197,28 @@ Copy-Item -Path $newEsInputConfigFile -Destination $esInputConfigFile
 $ESSystemsConfigPath = "$ESDataFolder/es_systems.cfg"
 Write-Host "INFO: Setting up EmulationStation Systems Config at $ESSystemsConfigPath"
 $systems = @{
-    "nes"          = @("Nintendo Entertainment System", ".nes .NES", "$retroarchExecutable -L $coresPath\fceumm_libretro.dll %ROM%", "nes", "nes");
-    "snes"         = @("Super Nintendo", ".smc .sfc .fig .swc .SMC .SFC .FIG .SWC", "$retroarchExecutable -L $coresPath\snes9x_libretro.dll %ROM%", "snes", "snes");
-    "n64"          = @("Nintendo 64", ".z64 .Z64 .n64 .N64 .v64 .V64", "$retroarchExecutable -L $coresPath\parallel_n64_libretro.dll %ROM%", "n64", "n64");
+    "amiga"        = @("Amiga", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amiga");
+    "atari2600"    = @("Atari 2600", ".a26 .bin .rom .A26 .BIN .ROM", "$retroarchExecutable -L $retroArchCoresPath\stella_libretro.dll %ROM%", "atari2600", "atari2600");
+    "atari7800"    = @("Atari 7800 Prosystem", ".a78 .bin .A78 .BIN", "$retroarchExecutable -L $retroArchCoresPath\prosystem_libretro.dll %ROM%", "atari7800", "atari7800");
+    "c64"          = @("Commodore 64", ".crt .d64 .g64 .t64 .tap .x64 .zip .CRT .D64 .G64 .T64 .TAP .X64 .ZIP", "$retroarchExecutable -L $retroArchCoresPath\vice_x64_libretro.dll %ROM%", "c64", "c64");
+    "fba"          = @("Final Burn Alpha", ".zip .ZIP .fba .FBA", "$retroarchExecutable -L $retroArchCoresPath\fbalpha2012_libretro.dll %ROM%", "arcade", "");
+    "gb"           = @("Game Boy", ".gb .zip .ZIP .7z", "$retroarchExecutable -L $retroArchCoresPath\gambatte_libretro.dll %ROM%", "gb", "gb");
+    "gba"          = @("Game Boy Advance", ".gba .GBA", "$retroarchExecutable -L $retroArchCoresPath\vba_next_libretro.dll %ROM%", "gba", "gba");
+    "gbc"          = @("Game Boy Color", ".gbc .GBC .zip .ZIP", "$retroarchExecutable -L $retroArchCoresPath\gambatte_libretro.dll %ROM%", "gbc", "gbc");
     "gc"           = @("Gamecube", ".iso .ISO", "$dolphinBinary -e `"%ROM_RAW%`"", "gc", "gc");
-    "wii"          = @("Nintendo Wii", ".iso .ISO .wad .WAD", "$dolphinBinary -e `"%ROM_RAW%`"", "wii", "wii");
-    "gb"           = @("Game Boy", ".gb .zip .ZIP .7z", "$retroarchExecutable -L $coresPath\gambatte_libretro.dll %ROM%", "gb", "gb");
-    "gbc"          = @("Game Boy Color", ".gbc .GBC .zip .ZIP", "$retroarchExecutable -L $coresPath\gambatte_libretro.dll %ROM%", "gbc", "gbc");
-    "gba"          = @("Game Boy Advance", ".gba .GBA", "$retroarchExecutable -L $coresPath\vba_next_libretro.dll %ROM%", "gba", "gba");
-    "psx"          = @("Playstation", ".cue .iso .pbp .CUE .ISO .PBP", "${psxEmulatorPath}ePSXe.exe -bios ${psxBiosPath}SCPH1001.BIN -nogui -loadbin %ROM%", "psx", "psx");
+    "mame"         = @("MAME", ".zip .ZIP", "$retroarchExecutable -L $retroArchCoresPath\hbmame_libretro.dll %ROM%", "mame", "mame");
+    "mastersystem" = @("Sega Master System", ".bin .sms .zip .BIN .SMS .ZIP", "$retroarchExecutable -L $retroArchCoresPath\genesis_plus_gx_libretro.dll %ROM%", "mastersystem", "mastersystem");
+    "megadrive"    = @("Sega Mega Drive / Genesis", ".smd .SMD .bin .BIN .gen .GEN .md .MD .zip .ZIP", "$retroarchExecutable -L $retroArchCoresPath\genesis_plus_gx_libretro.dll %ROM%", "genesis,megadrive", "megadrive");
+    "msx"          = @("MSX", ".col .dsk .mx1 .mx2 .rom .COL .DSK .MX1 .MX2 .ROM", "$retroarchExecutable -L $retroArchCoresPath\fmsx_libretro.dll %ROM%", "msx", "msx");
+    "n64"          = @("Nintendo 64", ".z64 .Z64 .n64 .N64 .v64 .V64", "$retroarchExecutable -L $retroArchCoresPath\parallel_n64_libretro.dll %ROM%", "n64", "n64");
+    "neogeo"       = @("Neo Geo", ".zip .ZIP", "$retroarchExecutable -L $retroArchCoresPath\fbalpha2012_libretro.dll %ROM%", "neogeo", "neogeo");
+    "nes"          = @("Nintendo Entertainment System", ".nes .NES", "$retroarchExecutable -L $retroArchCoresPath\fceumm_libretro.dll %ROM%", "nes", "nes");
+    "ngp"          = @("Neo Geo Pocket", ".ngp .ngc .zip .ZIP", "$retroarchExecutable -L $retroArchCoresPath\race_libretro.dll %ROM%", "ngp", "ngp");
     "ps2"          = @("Playstation 2", ".iso .img .bin .mdf .z .z2 .bz2 .dump .cso .ima .gz", "${ps2Binary} %ROM% --fullscreen --nogui", "ps2", "ps2");
-    "mame"         = @("MAME", ".zip .ZIP", "$retroarchExecutable -L $coresPath\hbmame_libretro.dll %ROM%", "mame", "mame");
-    "fba"          = @("Final Burn Alpha", ".zip .ZIP .fba .FBA", "$retroarchExecutable -L $coresPath\fbalpha2012_libretro.dll %ROM%", "arcade", "");
-    "amiga"        = @("Amiga", ".adf .ADF", "$retroarchExecutable -L $coresPath\puae_libretro.dll %ROM%", "amiga", "amiga");
-    "atari2600"    = @("Atari 2600", ".a26 .bin .rom .A26 .BIN .ROM", "$retroarchExecutable -L $coresPath\stella_libretro.dll %ROM%", "atari2600", "atari2600");
-    "atari7800"    = @("Atari 7800 Prosystem", ".a78 .bin .A78 .BIN", "$retroarchExecutable -L $coresPath\prosystem_libretro.dll %ROM%", "atari7800", "atari7800");
-    "c64"          = @("Commodore 64", ".crt .d64 .g64 .t64 .tap .x64 .zip .CRT .D64 .G64 .T64 .TAP .X64 .ZIP", "$retroarchExecutable -L $coresPath\vice_x64_libretro.dll %ROM%", "c64", "c64");
-    "megadrive"    = @("Sega Mega Drive / Genesis", ".smd .SMD .bin .BIN .gen .GEN .md .MD .zip .ZIP", "$retroarchExecutable -L $coresPath\genesis_plus_gx_libretro.dll %ROM%", "genesis,megadrive", "megadrive");
-    "mastersystem" = @("Sega Master System", ".bin .sms .zip .BIN .SMS .ZIP", "$retroarchExecutable -L $coresPath\genesis_plus_gx_libretro.dll %ROM%", "mastersystem", "mastersystem");
-    "msx"          = @("MSX", ".col .dsk .mx1 .mx2 .rom .COL .DSK .MX1 .MX2 .ROM", "$retroarchExecutable -L $coresPath\fmsx_libretro.dll %ROM%", "msx", "msx");
-    "neogeo"       = @("Neo Geo", ".zip .ZIP", "$retroarchExecutable -L $coresPath\fbalpha2012_libretro.dll %ROM%", "neogeo", "neogeo");
-    "ngp"          = @("Neo Geo Pocket", ".ngp .ngc .zip .ZIP", "$retroarchExecutable -L $coresPath\race_libretro.dll %ROM%", "ngp", "ngp");
+    "psx"          = @("Playstation", ".cue .iso .pbp .CUE .ISO .PBP", "${psxEmulatorPath}ePSXe.exe -bios ${psxBiosPath}SCPH1001.BIN -nogui -loadbin %ROM%", "psx", "psx");
     "scummvm"      = @("ScummVM", ".bat .BAT", "%ROM%", "pc", "scummvm");
+    "snes"         = @("Super Nintendo", ".smc .sfc .fig .swc .SMC .SFC .FIG .SWC", "$retroarchExecutable -L $retroArchCoresPath\snes9x_libretro.dll %ROM%", "snes", "snes");
+    "wii"          = @("Nintendo Wii", ".iso .ISO .wad .WAD", "$dolphinBinary -e `"%ROM_RAW%`"", "wii", "wii");
     "wiiu"         = @("Nintendo Wii U", ".rpx .RPX", "START /D $cemuBinary -f -g `"%ROM_RAW%`"", "wiiu", "wiiu");
 }
 Write-ESSystemsConfig $ESSystemsConfigPath $systems $RomsFolder
@@ -269,16 +267,16 @@ Get-ChildItem $downloadsFolder -Filter "*-games.json" | ForEach-Object {
 
 # TODO: find/test freeware games for these emulators.
 Write-Host "INFO: Creating empty ROM directories $path"
-New-Item -ItemType Directory -Force -Path "$RomsFolder\gb" | Out-Null
-New-Item -ItemType Directory -Force -Path "$RomsFolder\fba" | Out-Null
-New-Item -ItemType Directory -Force -Path "$RomsFolder\mame" | Out-Null
-New-Item -ItemType Directory -Force -Path "$RomsFolder\wiiu" | Out-Null
-New-Item -ItemType Directory -Force -Path "$RomsFolder\neogeo" | Out-Null
-New-Item -ItemType Directory -Force -Path "$RomsFolder\msx" | Out-Null
-New-Item -ItemType Directory -Force -Path "$RomsFolder\c64" | Out-Null
 New-Item -ItemType Directory -Force -Path "$RomsFolder\amiga" | Out-Null
 New-Item -ItemType Directory -Force -Path "$RomsFolder\atari7800" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\c64" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\fba" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\gb" | Out-Null
 New-Item -ItemType Directory -Force -Path "$RomsFolder\gc" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\mame" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\msx" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\neogeo" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\wiiu" | Out-Null
 # TODO: write a bat to boot some DOS/Scumm games
 New-Item -ItemType Directory -Force -Path "$RomsFolder\scummvm"
 
