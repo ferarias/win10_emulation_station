@@ -14,16 +14,15 @@ Function Get-MyModule {
     else { $true } #module already loaded
 } #end function get-MyModule
 
-function DownloadFiles {
+function Get-RemoteFiles {
     param (
-        [parameter(Mandatory = $true)][string]$downloadsFile,
-        [parameter(Mandatory = $true)][string]$downloadOption, 
+        [parameter(Mandatory = $true)][string]$jsonFile,
         [parameter(Mandatory = $true)][string]$targetDir
     )
     
-    Write-Host "Starting downloading of '$downloadOption' from '$downloadsFile'..."
+    Write-Host "Starting downloading of files from '$jsonFile'..."
 
-    Get-Content $downloadsFile | ConvertFrom-Json | Select-Object -expand $downloadOption | ForEach-Object {
+    Get-Content $jsonFile | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
     
         $url = $_.url
         $file = $_.file
@@ -39,16 +38,15 @@ function DownloadFiles {
         }
     }
 }
-
-function GithubReleaseFiles {
-    Param(
-        [String]$downloadsFile,
-        [String]$targetDir
+function Get-Releases {
+    param (
+        [parameter(Mandatory = $true)][string]$jsonFile,
+        [parameter(Mandatory = $true)][string]$targetDir
     )
 
-    Write-Host "Starting downloading of GitHub release files from '$downloadsFile'..."
+    Write-Host "Starting downloading of GitHub release files from '$jsonFile'..."
     
-    Get-Content $downloadsFile | ConvertFrom-Json | Select-Object -expand releases | ForEach-Object {
+    Get-Content $jsonFile | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
 
         $repo = $_.repo
         $file = $_.file
@@ -95,6 +93,28 @@ function CopyCore {
     }
     else {
         Write-Host "ERROR: $core not found."
+        # exit -1
+    }
+}
+
+function Add-Rom {
+    param(
+        [String]$zipFile,
+        [string]$targetFolder
+    )
+    if (Test-Path $zipFile) {
+        # Create target directory
+        New-Item -ItemType Directory -Force -Path $targetFolder | Out-Null
+        if ( $zipFile.EndsWith("zip") -or $zipFile.EndsWith("7z") -or $zipFile.EndsWith("gz") ) {
+            SetupZip $zipFile "" $targetFolder
+        }
+        else {
+            Move-Item -Path $zipFile -Destination $targetFolder -Force | Out-Null
+        }
+
+    }
+    else {
+        Write-Host "ERROR: $zipFile not found."
         exit -1
     }
 }
@@ -126,33 +146,6 @@ function SetupZip {
         exit -1
     }
 }
-
-function Add-Rom {
-    param(
-        [String]$rom,
-        [string]$path
-    )
-    if ([String]::IsNullOrWhiteSpace($rom)) {
-        New-Item -ItemType Directory -Force -Path $path | Out-Null
-    }
-    else {
-        if (Test-Path $rom) {
-            New-Item -ItemType Directory -Force -Path $path | Out-Null
-            if ( $rom.EndsWith("zip") -or $rom.EndsWith("7z") -or $rom.EndsWith("gz") ) {
-                Extract -Path $rom -Destination $path | Out-Null
-            }
-            else {
-                Move-Item -Path $rom -Destination $path -Force | Out-Null
-            }
-
-        }
-        else {
-            Write-Host "ERROR: $rom not found."
-            exit -1
-        }
-    }
-}
-
 
 function Write-ESSystemsConfig {
     param(

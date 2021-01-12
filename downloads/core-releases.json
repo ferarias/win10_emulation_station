@@ -1,0 +1,16 @@
+{
+    "items": [
+        {
+            "file": "scraper_windows_amd64.zip",
+            "repo": "sselph/scraper"
+        },
+        {
+            "file": "EmulationStation-Win32.zip",
+            "repo": "jrassa/emulationstation"
+        },
+        {
+            "file": "recalbox-backport-v2.1.zip",
+            "repo": "fonic/recalbox-backport"
+        }
+    ]
+}

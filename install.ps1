@@ -1,15 +1,22 @@
 #Require -Version 5.0
 using namespace System.IO
 
+[CmdletBinding()]
 param (
-    [Parameter(Mandatory)]$InstallDir,
-    [String] $CustomRomsFolder
+    [Parameter(Mandatory)]
+    [String]
+    $InstallDir,
+
+    [Parameter()]
+    [String]
+    $CustomRomsFolder
 )
 
 . .\functions.ps1
 
 # #############################################################################
 # Setup some basic directories and stuff
+Write-Host "Running from $PSScriptRoot"
 New-Item -ItemType Directory -Force -Path $InstallDir
 Write-Host "INFO: Install directory is $InstallDir"
 $ESRootFolder = [Path]::Combine($InstallDir, "EmulationStation");
@@ -20,10 +27,11 @@ Write-Host "INFO: EmulationStation data directory is $ESDataFolder"
 # ROMs folder
 if([String]::IsNullOrEmpty($CustomRomsFolder)) {
     $RomsFolder = [Path]::Combine($ESDataFolder, "roms")
+    New-Item -ItemType Directory -Force -Path $RomsFolder | Out-Null
 } else {
     if(-Not (Test-Path -Path $CustomRomsFolder)) {
-        Write-Error "ERROR: Custom ROMs folder $CustomRomsFolder does not exist!"
-        exit -1
+        Write-Information "Custom ROMs folder $CustomRomsFolder does not exist. Creating it."
+        New-Item -ItemType Directory -Force -Path $CustomRomsFolder
     }
     $RomsFolder = $CustomRomsFolder
 }
@@ -31,28 +39,40 @@ Write-Host "INFO: ROMs directory is $RomsFolder"
 
 $ESSystemsPath = [Path]::Combine($ESDataFolder , "systems")
 Write-Host "INFO: EmulationStation systems (emulators) directory is $ESSystemsPath"
+$ESThemesPath = [Path]::Combine($ESDataFolder , "themes")
+Write-Host "INFO: EmulationStation themes directory is $ESThemesPath"
 
 
-# Setup requiremens folder
-Write-Host "$PSScriptRoot"
+# #############################################################################
+# Acquire required files and leave them in a folder
 $requirementsFolder = [Path]::Combine("$PSScriptRoot", "requirements")
 Write-Host "INFO: Requirements directory is: $requirementsFolder"
 New-Item -ItemType Directory -Force -Path $requirementsFolder
 
-# Find downloads JSON file
-$downloadsFile = [Path]::Combine("$PSScriptRoot", "download_list.json")
-Write-Host "INFO: Downloads file is: $downloadsFile"
+$downloadsFolder = [Path]::Combine("$PSScriptRoot", "downloads")
 
+# Acquire some basic software required
+Get-ChildItem $downloadsFolder -Filter "*-downloads.json" | ForEach-Object {
+    Write-Host "INFO: Downloading core software from: $_"
+    Get-RemoteFiles $_.FullName $requirementsFolder
+}
 
-# Acquire files 
-DownloadFiles $downloadsFile "core" $requirementsFolder
-DownloadFiles $downloadsFile "lr-cores" $requirementsFolder
-DownloadFiles $downloadsFile "freeware-games" $requirementsFolder
-DownloadFiles $downloadsFile "misc" $requirementsFolder
-GithubReleaseFiles $downloadsFile $requirementsFolder
+# Acquire github releases
+Get-ChildItem $downloadsFolder -Filter "*-releases.json" | ForEach-Object {
+    Write-Host "INFO: Downloading releases in GitHub from: $_"
+    Get-Releases $_.FullName $requirementsFolder
+}
 
+# Acquire freeware games
+Get-ChildItem $downloadsFolder -Filter "*-games.json" | ForEach-Object {
+    Write-Host "INFO: Downloading freeware ROMs from: $_"
+    Get-RemoteFiles $_.FullName $requirementsFolder
+}
+
+# #############################################################################
 # Prepare 7-zip
 if (!(Get-MyModule -name "7Zip4Powershell")) { 
+    Write-Host "INFO: Installing required 7zip module in Powershell"
     Install-Module -Name "7Zip4Powershell" -Scope CurrentUser -Force 
 }
 Expand-7Zip -ArchiveFileName "$requirementsFolder\7z1900.exe" -TargetPath "$requirementsFolder\7z\"
@@ -83,48 +103,11 @@ Robocopy.exe $retroArchTempPath $retroArchPath /E /NFL /NDL /NJH /NJS /nc /ns /n
 
 # Install Retroarch cores
 $coresPath = [Path]::Combine($retroArchPath, "cores");
+$coresFile = [Path]::Combine($downloadsFolder, "lr-cores-downloads.json");
 
-# NES Setup
-CopyCore $requirementsFolder "fceumm_libretro.dll.zip" $coresPath
-
-# N64 Setup
-CopyCore $requirementsFolder "parallel_n64_libretro.dll.zip" $coresPath
-
-# FBA Setup
-CopyCore $requirementsFolder "fbalpha2012_libretro.dll.zip" $coresPath
-
-# GBA Setup
-CopyCore $requirementsFolder "vba_next_libretro.dll.zip" $coresPath
-
-# SNES Setup
-CopyCore $requirementsFolder "snes9x_libretro.dll.zip" $coresPath
-
-# Genesis GX Setup
-CopyCore $requirementsFolder "genesis_plus_gx_libretro.dll.zip" $coresPath
-
-# Game boy Colour Setup
-CopyCore $requirementsFolder "gambatte_libretro.dll.zip" $coresPath
-
-# Atari2600 Setup
-CopyCore $requirementsFolder "stella_libretro.dll.zip" $coresPath
-
-# MAME Setup
-CopyCore $requirementsFolder "hbmame_libretro.dll.zip" $coresPath
-
-# NeoGeo Pocket Setup
-CopyCore $requirementsFolder "race_libretro.dll.zip" $coresPath
-
-# MSX setup
-CopyCore $requirementsFolder "fmsx_libretro.dll.zip" $coresPath
-
-# C64 Setup
-CopyCore $requirementsFolder "vice_x64_libretro.dll.zip" $coresPath
-
-# Commodore Amiga Setup
-CopyCore $requirementsFolder "puae_libretro.dll.zip" $coresPath
-
-# PROSystem Setup
-CopyCore $requirementsFolder "prosystem_libretro.dll.zip" $coresPath
+Get-Content $coresFile | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
+    CopyCore $requirementsFolder $_.file $coresPath
+}
 
 # #############################################################################
 # Setup other systems
@@ -196,9 +179,6 @@ $settingToFind = 'input_player2_analog_dpad_mode = "0"'
 $settingToSet = 'input_player2_analog_dpad_mode = "1"'
 (Get-Content $retroarchConfigPath) -replace $settingToFind, $settingToSet | Set-Content $retroarchConfigPath
 
-# TODO: write a bat to boot some DOS/Scumm games
-Add-Rom "" "$RomsFolder\scummvm"
-
 # #############################################################################
 # Set EmulationStation configurations
 $ESSettingsFile = "$ESDataFolder\es_settings.cfg"
@@ -245,50 +225,47 @@ Write-ESSystemsConfig $ESSystemsConfigPath $systems $RomsFolder
 
 # Setup EmulationStation theme
 Write-Host "INFO: Setting up Emulation Station theme recalbox-backport"
-$themesPath = "$ESDataFolder\themes\recalbox-backport\"
-$themesFile = "$requirementsFolder\recalbox-backport-v2-recalbox-backport-v2.1.zip"
-if (Test-Path $themesFile) {
-    Extract -Path $themesFile -Destination $requirementsFolder | Out-Null
+$themeFile = "$requirementsFolder\recalbox-backport-v2-recalbox-backport-v2.1.zip"
+$themePath = "$ESThemesPath\recalbox-backport\"
+if (Test-Path $themeFile) {
+    Extract -Path $themeFile -Destination $requirementsFolder | Out-Null
     $themesFolder = "$requirementsFolder\recalbox-backport\"
-    robocopy $themesFolder $themesPath /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+    robocopy $themesFolder $themePath /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
 }
 else {
-    Write-Host "ERROR: $themesFile not found."
+    Write-Host "ERROR: $themeFile not found."
     exit -1
 }
 
 # #############################################################################
 # Add free roms
-New-Item -ItemType Directory -Force -Path $RomsFolder | Out-Null
 
 # Path creation + Open-Source / Freeware Rom population
 Write-Host "INFO: Creating ROM directories and filling with freeware ROMs $path"
-Add-Rom "$requirementsFolder\assimilate_full.zip" "$RomsFolder\nes"
-Add-Rom "$requirementsFolder\pom-twin.zip" "$RomsFolder\n64"
-Add-Rom "$requirementsFolder\uranus0ev_fix.gba" "$RomsFolder\gba"
-Add-Rom "$requirementsFolder\T2002.gba" "$RomsFolder\gba"
-Add-Rom "$requirementsFolder\rickdangerous.gen" "$RomsFolder\megadrive"
-Add-Rom "$requirementsFolder\N-Warp Daisakusen V1.1.smc" "$RomsFolder\snes"
-Add-Rom "$requirementsFolder\Marilyn_In_the_Magic_World_(010a).7z" "$RomsFolder\psx"
-Add-Rom "$requirementsFolder\hermes-v.latest-ps2.zip" "$RomsFolder\ps2"
-Add-Rom "$requirementsFolder\star_heritage.zip" "$RomsFolder\gbc"
-Add-Rom "$requirementsFolder\WahMunchers-SMS-R2.zip" "$RomsFolder\mastersystem"
-Add-Rom "$requirementsFolder\ramless_pong.bin" "$RomsFolder\atari2600"
-Add-Rom "$requirementsFolder\neopocket.zip" "$RomsFolder\ngp"
-Add-Rom "$requirementsFolder\Homebrew.Channel.-.OHBC.wad" "$RomsFolder\wii"
+Get-Content $freeGamesFile | ConvertFrom-Json | Select-Object -ExpandProperty games | ForEach-Object {
+    $file = $_.file
+    if([String]::IsNullOrEmpty( $file ) ) {
+        continue;
+    }
+    $platform = $_.platform
+
+    Add-Rom "$requirementsFolder\$file" "$RomsFolder\$platform"
+}
 
 # TODO: find/test freeware games for these emulators.
 Write-Host "INFO: Creating empty ROM directories $path"
-Add-Rom "" "$RomsFolder\gb"
-Add-Rom "" "$RomsFolder\fba"
-Add-Rom "" "$RomsFolder\mame"
-Add-Rom "" "$RomsFolder\wiiu"
-Add-Rom "" "$RomsFolder\neogeo"
-Add-Rom "" "$RomsFolder\msx"
-Add-Rom "" "$RomsFolder\c64"
-Add-Rom "" "$RomsFolder\amiga"
-Add-Rom "" "$RomsFolder\atari7800"
-Add-Rom "" "$RomsFolder\gc"
+New-Item -ItemType Directory -Force -Path "$RomsFolder\gb" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\fba" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\mame" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\wiiu" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\neogeo" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\msx" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\c64" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\amiga" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\atari7800" | Out-Null
+New-Item -ItemType Directory -Force -Path "$RomsFolder\gc" | Out-Null
+# TODO: write a bat to boot some DOS/Scumm games
+New-Item -ItemType Directory -Force -Path "$RomsFolder\scummvm"
 
 
 # Add an scraper to ROMs folder

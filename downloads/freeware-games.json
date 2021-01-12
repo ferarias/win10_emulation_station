@@ -1,0 +1,64 @@
+{
+    "items": [
+        {
+            "file": "Marilyn_In_the_Magic_World_(010a).7z",
+            "url": "https://raw.githubusercontent.com/PublicDomainRoms/public-domain-roms/master/psx/Marilyn_In_the_Magic_World_(010a).7z",
+            "platform": "psx"
+        },
+        {
+            "file": "N-Warp Daisakusen V1.1.smc",
+            "url": "https://github.com/OpenEmu/OpenEmu-Update/raw/master/Homebrew/SNES/N-Warp%20Daisakusen/N-Warp%20Daisakusen%20V1.1.smc",
+            "platform": "snes"
+        },
+        {
+            "file": "T2002.gba",
+            "url": "https://github.com/OpenEmu/OpenEmu-Update/raw/master/Homebrew/GBA/T2002/T2002.gba",
+            "platform": "gba"
+        },
+        {
+            "file": "WahMunchers-SMS-R2.zip",
+            "url": "https://www.smspower.org/uploads/Homebrew/WahMunchers-SMS-R2.zip",
+            "platform": "mastersystem"
+        },
+        {
+            "file": "assimilate_full.zip",
+            "url": "http://www.nesworld.com/homebrew/assimilate_full.zip",
+            "platform": "nes"
+        },
+        {
+            "file": "hermes-v.latest-ps2.zip",
+            "url": "http://www.retroguru.com/hermes/hermes-v.latest-ps2.zip",
+            "platform": "ps2"
+        },
+        {
+            "file": "neopocket.zip",
+            "url": "https://github.com/PublicDomainRoms/public-domain-roms/raw/master/ngp/neopocket.zip",
+            "platform": "ngp"
+        },
+        {
+            "file": "pom-twin.zip",
+            "url": "http://www.nesworld.com/n64/homebrew/pom-twin.zip",
+            "platform": "n64"
+        },
+        {
+            "file": "ramless_pong.bin",
+            "url": "https://raw.githubusercontent.com/PublicDomainRoms/public-domain-roms/master/ramless_pong.bin",
+            "platform": "atari2600"
+        },
+        {
+            "file": "rickdangerous.gen",
+            "url": "https://github.com/OpenEmu/OpenEmu-Update/raw/master/Homebrew/SG/Rick%20Dangerous/rickdangerous.gen",
+            "platform": "megadrive"
+        },
+        {
+            "file": "star_heritage.zip",
+            "url": "http://www.nesworld.com/gbc/homebrew/commercial/star_heritage.zip",
+            "platform": "gbc"
+        },
+        {
+            "file": "uranus0ev_fix.gba",
+            "url": "https://github.com/OpenEmu/OpenEmu-Update/raw/master/Homebrew/GBA/Uranus%20Zero%20EV/uranus0ev_fix.gba",
+            "platform": "gba"
+        }
+    ]
+}
