@@ -1,0 +1,24 @@
+{
+    "items": [
+        {
+            "file": "downloads_apidya_ADFs.zip",
+            "url": "http://dream17.abime.net/download.php?id=22",
+            "platform": "amiga500"
+        },
+        {
+            "file": "downloads_superfrog_ADFs.zip",
+            "url": "http://dream17.abime.net/download.php?id=14",
+            "platform": "amiga500"
+        },
+        {
+            "file": "downloads_alienbreed_ADFs.zip",
+            "url": "http://dream17.abime.net/download.php?id=4",
+            "platform": "amiga500"
+        },
+        {
+            "file": "downloads_alienbreed2_ADFs.zip",
+            "url": "http://dream17.abime.net/download.php?id=12",
+            "platform": "amiga500"
+        }
+    ]
+}

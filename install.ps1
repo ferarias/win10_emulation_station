@@ -46,23 +46,17 @@ Write-Host "INFO: EmulationStation themes directory is $ESThemesPath"
 
 # #############################################################################
 # Acquire required files and leave them in a folder for later use
-# Look into the downloads folder to see what downloads are configured
+# You can take a look at the "downloads" folder to see what downloads are configured
 $downloadsFolder = [Path]::Combine("$PSScriptRoot", "downloads")
-Write-Host "INFO: Downloads directory is: $downloadsFolder. Looking for download files here..."
+Write-Host "INFO: Downloads directory is: $downloadsFolder. Looking for json files here..."
 
 $cacheFolder = [Path]::Combine("$PSScriptRoot", ".cache")
 Write-Host "INFO: Cache directory is: $cacheFolder"
 New-Item -ItemType Directory -Force -Path $cacheFolder
 
 # Acquire some basic software required
-Get-ChildItem $downloadsFolder -Filter "*-downloads.json" | ForEach-Object {
+Get-ChildItem $downloadsFolder -Filter "*.json" -Depth 0 | ForEach-Object {
     Write-Host "INFO: Downloading core software from: $_"
-    Get-RemoteFiles $_.FullName $cacheFolder
-}
-
-# Acquire freeware games
-Get-ChildItem $downloadsFolder -Filter "*-games.json" | ForEach-Object {
-    Write-Host "INFO: Downloading freeware ROMs from: $_"
     Get-RemoteFiles $_.FullName $cacheFolder
 }
 
@@ -100,7 +94,7 @@ Robocopy.exe $retroArchSourcePath $retroArchInstallPath /E /NFL /NDL /NJH /NJS /
 
 # Install Retroarch cores
 $retroArchCoresPath = [Path]::Combine($retroArchInstallPath, "cores");
-$coresFile = [Path]::Combine($downloadsFolder, "lr-cores-downloads.json");
+$coresFile = [Path]::Combine($downloadsFolder, "lr-cores.json");
 
 Get-Content $coresFile | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
     $coreZip = [Path]::Combine($cacheFolder, $_.file)
@@ -244,14 +238,26 @@ else {
 
 # #############################################################################
 # Path creation + Open-Source / Freeware Rom population
+# #############################################################################
+# Acquire required files and leave them in a folder for later use
+# Look into the downloads folder to see what downloads are configured
+$gameDownloadsFolder = [Path]::Combine($downloadsFolder, "games")
+Write-Host "INFO: Obtaining Freeware Games lists in folder: $gameDownloadsFolder."
+$gameCacheFolder = [Path]::Combine($cacheFolder, "games")
+Write-Host "INFO: Freeware Game Downloads will be cached in: $gameCacheFolder."
+New-Item -ItemType Directory -Force -Path $gameCacheFolder | Out-Null
+
+# Acquire freeware games
 Write-Host "INFO: Creating ROM directories and filling with freeware ROMs in $RomsFolder"
-Get-ChildItem $downloadsFolder -Filter "*-games.json" | ForEach-Object {
-    Write-Host "INFO: Obtaining freeware ROMs from: $_"
+Get-ChildItem $gameDownloadsFolder -Filter "*.json" | ForEach-Object {
+    Write-Host "INFO: Downloading and caching freeware ROMs from: $_"
+    Get-RemoteFiles $_.FullName $gameCacheFolder
+
     Get-Content $_.FullName | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
         if ([String]::IsNullOrEmpty( $_.file ) ) {
             continue;
         }
-        $sourceFile = [Path]::Combine($cacheFolder, $_.file)
+        $sourceFile = [Path]::Combine($gameCacheFolder, $_.file)
         $targetFolder = [Path]::Combine($RomsFolder, $_.platform)
         if ((Test-Path $targetFolder) -ne $true) {
             New-Item -ItemType Directory -Force -Path $targetFolder | Out-Null
