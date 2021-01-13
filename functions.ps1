@@ -1,3 +1,4 @@
+using namespace System.IO
 Function Get-MyModule {
     Param(
         [string]$name
@@ -20,8 +21,6 @@ function Get-RemoteFiles {
         [parameter(Mandatory = $true)][string]$targetDir
     )
     
-    Write-Host "Starting downloading of files from '$jsonFile'..."
-
     Get-Content $jsonFile | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
     
         $file = $_.file
@@ -40,11 +39,11 @@ function Get-RemoteFiles {
         }
         if (![System.IO.File]::Exists($output)) {
     
-            Write-Host "INFO: Downloading $file"
+            Write-Host -ForegroundColor Green "Downloading $file"
             Invoke-WebRequest $url -Out $output   
         }
         else {
-            Write-Host $file "INFO: Already exists... skipping download."
+            Write-Host -ForegroundColor Gray "Already downloaded $file... skipped."
         }
     }
 }
@@ -55,26 +54,32 @@ function Expand-PackedFile {
         [String]$targetFolder,
         [string]$zipFolderToCopy
     )
-    # System Setup
-    if (Test-Path $archiveFile) {
-        # Create target directory
-        New-Item -ItemType Directory -Force -Path $targetFolder | Out-Null
-        # Extract to a temp folder
-        $tempFolder = "$cacheFolder/temp/"
-        Extract -Path $archiveFile -Destination $tempFolder | Out-Null
-        # Move files to the final directory in systems folder
-        if ($zipFolderToCopy -eq "") {
-            Robocopy.exe $tempFolder $targetFolder /E /NFL /NDL /NJH /NJS /nc /ns /np /MOVE | Out-Null
+    $tempFolder = New-TemporaryDirectory
+    try {
+        if (Test-Path $archiveFile) {
+            # Create target directory
+            New-Item -ItemType Directory -Force -Path $targetFolder | Out-Null
+            # Extract to a temp folder
+            Extract -Path $archiveFile -Destination $tempFolder | Out-Null
+            # Move files to the final directory in systems folder
+            if ($zipFolderToCopy -eq "") {
+                Robocopy.exe $tempFolder $targetFolder /E /NFL /NDL /NJH /NJS /nc /ns /np /MOVE | Out-Null
+            }
+            else {
+                Robocopy.exe $tempFolder/$zipFolderToCopy $targetFolder /E /NFL /NDL /NJH /NJS /nc /ns /np /MOVE | Out-Null
+            }
         }
         else {
-            Robocopy.exe $tempFolder/$zipFolderToCopy $targetFolder /E /NFL /NDL /NJH /NJS /nc /ns /np /MOVE | Out-Null
-            Remove-Item $tempFolder -Force -Recurse
+            Write-Host -ForegroundColor Red "ERROR: $archiveFile not found."
+            exit -1
         }
     }
-    else {
-        Write-Host "ERROR: $archiveFile not found."
-        exit -1
+    finally {
+        if(Test-Path $tempFolder) {
+            Remove-Item $tempFolder -Force -Recurse | Out-Null
+        }
     }
+    
 }
 
 function Extract([string]$Path, [string]$Destination) {
@@ -136,4 +141,10 @@ function Add-Shortcut {
         $link.IconLocation = $ShortcutIcon
     }
     $link.Save() 
+}
+
+function New-TemporaryDirectory {
+    $parent = [System.IO.Path]::GetTempPath()
+    [string] $name = [System.Guid]::NewGuid()
+    New-Item -ItemType Directory -Path (Join-Path $parent $name)
 }

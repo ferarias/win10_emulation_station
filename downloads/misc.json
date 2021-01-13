@@ -1,9 +1,5 @@
 {
     "items": [
-        {
-            "file": "Homebrew.Channel.-.OHBC.wad",
-            "url": "https://github.com/FIX94/hbc/releases/download/1.1.4-1/Homebrew.Channel.-.OHBC.wad"
-        },
 		{
             "file": "scraper_windows_amd64.zip",
             "repo": "sselph/scraper"

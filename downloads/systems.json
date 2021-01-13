@@ -2,23 +2,31 @@
     "items": [
 		{
 			"file": "RetroArch.7z",
-			"url": "https://buildbot.libretro.com/stable/1.9.0/windows/x86_64/RetroArch.7z"
+			"url": "https://buildbot.libretro.com/stable/1.9.0/windows/x86_64/RetroArch.7z",
+			"folder": "retroarch"
 		},
 		{
 			"file": "dolphin-master-5.0-12716-x64.7z",
-			"url": "https://dl.dolphin-emu.org/builds/ed/c4/dolphin-master-5.0-12716-x64.7z"
+			"url": "https://dl.dolphin-emu.org/builds/ed/c4/dolphin-master-5.0-12716-x64.7z",
+			"folder": "dolphin",
+			"innerFolder": "Dolphin-x64"
 		},
 		{
 			"file": "cemu_1.22.0.zip",
-			"url": "https://cemu.info/releases/cemu_1.22.0.zip"
+			"url": "https://cemu.info/releases/cemu_1.22.0.zip",
+			"folder": "cemu",
+			"innerFolder": "cemu_1.22.0"
 		},
 		{
 			"file": "ePSXe205.zip",
-			"url": "http://www.epsxe.com/files/ePSXe205.zip"
+			"url": "http://www.epsxe.com/files/ePSXe205.zip",
+			"folder": "epsx"
 		},
 		{
 			"file": "pcsx2-1.6.0-setup.exe",
-			"url": "https://delivery2.filecroco.com/kits_6/pcsx2-1.6.0-setup.exe"
+			"url": "https://delivery2.filecroco.com/kits_6/pcsx2-1.6.0-setup.exe",
+			"folder": "pcsx2",
+			"innerFolder": "`$TEMP/PCSX2 1.6.0"
 		}
     ]
 }

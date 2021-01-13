@@ -59,6 +59,11 @@
             "file": "uranus0ev_fix.gba",
             "url": "https://github.com/OpenEmu/OpenEmu-Update/raw/master/Homebrew/GBA/Uranus%20Zero%20EV/uranus0ev_fix.gba",
             "platform": "gba"
+        },
+        {
+            "file": "Homebrew.Channel.-.OHBC.wad",
+            "url": "https://github.com/FIX94/hbc/releases/download/1.1.4-1/Homebrew.Channel.-.OHBC.wad",
+            "platform": "wii"
         }
     ]
 }

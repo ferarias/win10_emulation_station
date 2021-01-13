@@ -11,12 +11,16 @@ param (
     [String]
     $CustomRomsFolder
 )
+Write-Host -ForegroundColor White "WINDOWS 10 EMULATION STATION EASY SETUP"
 
 . .\functions.ps1
 
 # #############################################################################
+# SETUP BASIC STUFF
+# #############################################################################
+Write-Host -ForegroundColor Yellow "SETTING UP REQUIRED PATHS"
 # Setup some basic directories and stuff
-Write-Host "Running from $PSScriptRoot"
+Write-Host "INFO: Running from $PSScriptRoot"
 New-Item -ItemType Directory -Force -Path $InstallDir
 Write-Host "INFO: Install directory is $InstallDir"
 $ESRootFolder = [Path]::Combine($InstallDir, "EmulationStation");
@@ -24,119 +28,101 @@ Write-Host "INFO: EmulationStation root directory is $ESRootFolder"
 $ESDataFolder = [Path]::Combine($ESRootFolder, ".emulationstation")
 Write-Host "INFO: EmulationStation data directory is $ESDataFolder"
 
-# ROMs folder
+# Create a folder for caching downloads
+$cacheFolder = [Path]::Combine("$PSScriptRoot", ".cache")
+Write-Host "INFO: Cache directory is: $cacheFolder"
+New-Item -ItemType Directory -Force -Path $cacheFolder
+
+# Determine the ROMs directory
 if ([String]::IsNullOrEmpty($CustomRomsFolder)) {
     $RomsFolder = [Path]::Combine($ESDataFolder, "roms")
     New-Item -ItemType Directory -Force -Path $RomsFolder | Out-Null
 }
 else {
     if (-Not (Test-Path -Path $CustomRomsFolder)) {
-        Write-Information "Custom ROMs folder $CustomRomsFolder does not exist. Creating it."
-        New-Item -ItemType Directory -Force -Path $CustomRomsFolder
+        Write-Host "INFO: Custom ROMs folder $CustomRomsFolder does not exist. Creating it."
+        New-Item -ItemType Directory -Force -Path $CustomRomsFolder | Out-Null
     }
     $RomsFolder = $CustomRomsFolder
 }
 Write-Host "INFO: ROMs directory is $RomsFolder"
 
-$ESSystemsPath = [Path]::Combine($ESDataFolder , "systems")
-Write-Host "INFO: EmulationStation systems (emulators) directory is $ESSystemsPath"
-$ESThemesPath = [Path]::Combine($ESDataFolder , "themes")
-Write-Host "INFO: EmulationStation themes directory is $ESThemesPath"
-
-
-# #############################################################################
-# Acquire required files and leave them in a folder for later use
-# You can take a look at the "downloads" folder to see what downloads are configured
+# Set the files that will be downloaded in each section
+# You can take a look at the "downloads" folder to see which downloads are configured
 $downloadsFolder = [Path]::Combine("$PSScriptRoot", "downloads")
-Write-Host "INFO: Downloads directory is: $downloadsFolder. Looking for json files here..."
-
-$cacheFolder = [Path]::Combine("$PSScriptRoot", ".cache")
-Write-Host "INFO: Cache directory is: $cacheFolder"
-New-Item -ItemType Directory -Force -Path $cacheFolder
-
-# Acquire some basic software required
-Get-ChildItem $downloadsFolder -Filter "*.json" -Depth 0 | ForEach-Object {
-    Write-Host "INFO: Downloading core software from: $_"
-    Get-RemoteFiles $_.FullName $cacheFolder
+Write-Host "INFO: Downloads directory is: $downloadsFolder."
+$downloads = @{ 
+    Core    = [Path]::Combine($downloadsFolder, "core.json") ; 
+    Systems = [Path]::Combine($downloadsFolder, "systems.json") ; 
+    Lrcores = [Path]::Combine($downloadsFolder, "lr-cores.json") ; 
+    Misc    = [Path]::Combine($downloadsFolder, "misc.json") ;
+    Games   = [Path]::Combine($downloadsFolder, "games")
 }
 
 # #############################################################################
-# Prepare 7-zip
+# ## CORE SOFTWARE
+# #############################################################################
+Write-Host -ForegroundColor Yellow "INSTALLING CORE SOFTWARE"
+Write-Host -ForegroundColor Green "Downloading core software from $($downloads.Core)"
+Get-RemoteFiles $downloads.Core $cacheFolder
+
+# 7-zip
 if (!(Get-MyModule -name "7Zip4Powershell")) { 
-    Write-Host "INFO: Installing required 7zip module in Powershell"
+    Write-Host -ForegroundColor Blue "Installing required 7zip module in Powershell"
     Install-Module -Name "7Zip4Powershell" -Scope CurrentUser -Force 
 }
 Expand-7Zip -ArchiveFileName "$cacheFolder\7z1900.exe" -TargetPath "$cacheFolder\7z\"
 
-# #############################################################################
-# Install Emulation Station binaries
+# Emulation Station
 Expand-PackedFile "$cacheFolder/emulationstation_win32_latest.zip" $ESRootFolder
 Expand-PackedFile "$cacheFolder/EmulationStation-Win32-continuous-master.zip" $ESRootFolder 
 
 # #############################################################################
-# Install Retroarch system
-$retroArchSourcePath = [Path]::Combine($cacheFolder, "retroarch")
+# ## SYSTEMS
+# #############################################################################
+Write-Host -ForegroundColor Yellow "INSTALLING SYSTEMS (EMULATORS)"
+$ESSystemsPath = [Path]::Combine($ESDataFolder, "systems")
+Write-Host "INFO: EmulationStation systems (emulators) directory is $ESSystemsPath"
+
+Write-Host -ForegroundColor Green "Downloading Systems software from $($downloads.Systems) to $cacheFolder"
+Get-RemoteFiles $downloads.Systems $cacheFolder
+
+Get-Content $downloads.Systems | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
+    $file = [Path]::Combine($cacheFolder, $_.file)
+    $installPath = [Path]::Combine($ESSystemsPath, $_.folder)
+    $innerFolder = $_.innerFolder
+    Write-Host -ForegroundColor Blue "Installing $file system in $installPath"
+    Expand-PackedFile $file $installPath $innerFolder | Out-Null
+}
+
+# #############################################################################
+# ## SYSTEMS CONFIGURATION
+# #############################################################################
+Write-Host -ForegroundColor Yellow "CONFIGURING SYSTEMS"
+# RETROARCH system configuration
 $retroArchInstallPath = [Path]::Combine($ESSystemsPath, "retroarch")
-Write-Host "INFO: Setting up RetroArch in $retroArchInstallPath..."
-if (!(Test-Path $retroArchSourcePath)) {
-    $retroArchPackage = [Path]::Combine($cacheFolder, "RetroArch.7z");
-    if (Test-Path $retroArchPackage) {
-        Write-Host "INFO: Extracting RetroArch..."
-        Expand-PackedFile $retroArchPackage $retroArchSourcePath | Out-Null
-    }
-    else {
-        Write-Host "ERROR: $retroArchBinary not found."
-        exit -1
-    }
-}
-Write-Host "INFO: Copying RetroArch files. This may take a while, so be patient..."
-Robocopy.exe $retroArchSourcePath $retroArchInstallPath /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+$retroarchExecutable = [Path]::Combine($retroArchInstallPath, "retroarch.exe")
+$retroarchConfigPath = [Path]::Combine($retroArchInstallPath, "retroarch.cfg")
 
-# Install Retroarch cores
+# Installing libretro cores
+Write-Host -ForegroundColor Green "Downloading libretro cores from: $($downloads.Lrcores)"
+Get-RemoteFiles $downloads.Lrcores $cacheFolder
+$retroArchCoresFile = [Path]::Combine($downloadsFolder, "lr-cores.json");
 $retroArchCoresPath = [Path]::Combine($retroArchInstallPath, "cores");
-$coresFile = [Path]::Combine($downloadsFolder, "lr-cores.json");
 
-Get-Content $coresFile | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
+Get-Content $retroArchCoresFile | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
     $coreZip = [Path]::Combine($cacheFolder, $_.file)
-    if (Test-Path $coreZip) {
-        Expand-PackedFile $coreZip $retroArchCoresPath | Out-Null
-    }
-    else {
-        Write-Host "ERROR: $coreZip not found."
-    }
+    Expand-PackedFile $coreZip $retroArchCoresPath | Out-Null
 }
-
-# Setup PSX system
-Expand-PackedFile "$cacheFolder/ePSXe205.zip" "$ESSystemsPath/epsxe"
-
-# Setup CEMU system
-Expand-PackedFile "$cacheFolder/cemu_1.22.0.zip" "$ESSystemsPath/cemu" "cemu_1.22.0"
-
-# Setup PS2 system
-Expand-PackedFile "$cacheFolder/pcsx2-1.6.0-setup.exe" "$ESSystemsPath/pcsx2" "`$TEMP/PCSX2 1.6.0"
-
-# Setup Dolphin system
-Expand-PackedFile "$cacheFolder/dolphin-master-5.0-12716-x64.7z" "$ESSystemsPath/dolphin" "Dolphin-x64"
-$dolphinBinary = "$ESSystemsPath/dolphin/Dolphin.exe"
-Write-Host "INFO: Generating Dolphin Config"
-New-Item -Path "$ESSystemsPath/dolphin/portable.txt" -ItemType File -Force | Out-Null
-New-Item -Path "$ESSystemsPath/dolphin/User/Config" -ItemType Directory -Force | Out-Null
-$dolphinConfigFile = "$ESSystemsPath/dolphin/User/Config/Dolphin.ini"
-$newDolphinConfigFile = [Path]::Combine($PSScriptRoot, "configs", "Dolphin.ini")
-Copy-Item -Path $newDolphinConfigFile -Destination $dolphinConfigFile -Force
-(Get-Content $dolphinConfigFile) -replace "{ESSystemsPath}", $ESSystemsPath | Set-Content $dolphinConfigFile
 
 # Start Retroarch and generate a config.
-$retroarchExecutable = "$retroArchInstallPath\retroarch.exe"
-$retroarchConfigPath = "$retroArchInstallPath\retroarch.cfg"
-
 if (Test-Path $retroarchExecutable) {
     
-    Write-Host "INFO: Retroarch executable found, launching"
+    Write-Host "Retroarch executable found, launching"
     Start-Process $retroarchExecutable
     
     while (!(Test-Path $retroarchConfigPath)) { 
-        Write-Host "INFO: Checking for retroarch config file $retroarchConfigPath"
+        Write-Host "Checking for retroarch config file $retroarchConfigPath"
         Start-Sleep 5
     }
 
@@ -152,12 +138,12 @@ if (Test-Path $retroarchExecutable) {
 
 }
 else {
-    Write-Host "ERROR: Could not find $retroarchExecutable"
+    Write-Host -ForegroundColor Red "ERROR: Could not find $retroarchExecutable"
     exit -1
 }
 
 # Tweak retroarch config!
-Write-Host "INFO: Replacing RetroArch config"
+Write-Host -ForegroundColor Blue "Replacing RetroArch config"
 $settingToFind = 'video_fullscreen = "false"'
 $settingToSet = 'video_fullscreen = "true"'
 (Get-Content $retroarchConfigPath) -replace $settingToFind, $settingToSet | Set-Content $retroarchConfigPath
@@ -174,23 +160,20 @@ $settingToFind = 'input_player2_analog_dpad_mode = "0"'
 $settingToSet = 'input_player2_analog_dpad_mode = "1"'
 (Get-Content $retroarchConfigPath) -replace $settingToFind, $settingToSet | Set-Content $retroarchConfigPath
 
-# #############################################################################
-# Set EmulationStation configurations
-$ESSettingsFile = "$ESDataFolder\es_settings.cfg"
-Write-Host "INFO: Generating ES settings file at $ESSettingsFile"
-$newEsConfigFile = [Path]::Combine($PSScriptRoot, "configs", "es_settings.cfg")
-Copy-Item -Path $newEsConfigFile -Destination $ESSettingsFile -Force
-(Get-Content $ESSettingsFile) -replace "{ESInstallFolder}", $ESRootFolder | Set-Content $ESSettingsFile
+# DOLPHIN system configuration
+$dolphinBinary = "$ESSystemsPath/dolphin/Dolphin.exe"
+Write-Host -ForegroundColor Blue "Generating Dolphin Config"
+New-Item -Path "$ESSystemsPath/dolphin/portable.txt" -ItemType File -Force | Out-Null
+New-Item -Path "$ESSystemsPath/dolphin/User/Config" -ItemType Directory -Force | Out-Null
+$dolphinConfigFile = "$ESSystemsPath/dolphin/User/Config/Dolphin.ini"
+$newDolphinConfigFile = [Path]::Combine($PSScriptRoot, "configs", "Dolphin.ini")
+Copy-Item -Path $newDolphinConfigFile -Destination $dolphinConfigFile -Force
+(Get-Content $dolphinConfigFile) -replace "{ESSystemsPath}", $ESSystemsPath | Set-Content $dolphinConfigFile
 
-# Set a default keyboard mapping for EmulationStation
-$esInputConfigFile = "$ESDataFolder\es_input.cfg"
-Write-Host "INFO: Setting up Emulation Station basic keyboard input at $esInputConfigFile"
-$newEsInputConfigFile = [Path]::Combine($PSScriptRoot, "configs", "es_input.cfg")
-Copy-Item -Path $newEsInputConfigFile -Destination $esInputConfigFile
-
-# Setup EmulationStation available systems
+# EMULATION STATION CONFIGURATION
+# Set EmulationStation available systems (es_systems.cfg)
 $ESSystemsConfigPath = "$ESDataFolder/es_systems.cfg"
-Write-Host "INFO: Setting up EmulationStation Systems Config at $ESSystemsConfigPath"
+Write-Host -ForegroundColor Blue "Setting up EmulationStation Systems Config at $ESSystemsConfigPath"
 $systems = @{
     "amiga500"     = @("Amiga", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amiga500");
     "amigacdtv"    = @("Amiga", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amigacdtv");
@@ -222,35 +205,35 @@ $systems = @{
 }
 Write-ESSystemsConfig $ESSystemsConfigPath $systems $RomsFolder
 
-# Setup EmulationStation theme
-Write-Host "INFO: Setting up Emulation Station theme recalbox-backport"
-$themeFile = "$cacheFolder\recalbox-backport-v2-recalbox-backport-v2.1.zip"
-$themePath = "$ESThemesPath\recalbox-backport\"
-if (Test-Path $themeFile) {
-    Expand-PackedFile $themeFile $cacheFolder | Out-Null
-    $themesFolder = "$cacheFolder\recalbox-backport\"
-    robocopy $themesFolder $themePath /E /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
-}
-else {
-    Write-Host "ERROR: $themeFile not found."
-    exit -1
-}
+# Set EmulationStation configurations (es_settings.cfg)
+$ESSettingsFile = "$ESDataFolder\es_settings.cfg"
+Write-Host -ForegroundColor Blue "Generating ES settings file at $ESSettingsFile"
+$newEsConfigFile = [Path]::Combine($PSScriptRoot, "configs", "es_settings.cfg")
+Copy-Item -Path $newEsConfigFile -Destination $ESSettingsFile -Force
+(Get-Content $ESSettingsFile) -replace "{ESInstallFolder}", $ESRootFolder | Set-Content $ESSettingsFile
+
+# Set EmulationStation default keyboard mapping (es_input.cfg)
+$esInputConfigFile = "$ESDataFolder\es_input.cfg"
+Write-Host -ForegroundColor Blue "Setting up Emulation Station basic keyboard input at $esInputConfigFile"
+$newEsInputConfigFile = [Path]::Combine($PSScriptRoot, "configs", "es_input.cfg")
+Copy-Item -Path $newEsInputConfigFile -Destination $esInputConfigFile
+
 
 # #############################################################################
-# Path creation + Open-Source / Freeware Rom population
+# ## OPEN-SOURCE/FREEWARE ROMS INSTALLATION
 # #############################################################################
+Write-Host -ForegroundColor Yellow "INSTALLING SOME FREEWARE ROMS"
 # Acquire required files and leave them in a folder for later use
-# Look into the downloads folder to see what downloads are configured
-$gameDownloadsFolder = [Path]::Combine($downloadsFolder, "games")
-Write-Host "INFO: Obtaining Freeware Games lists in folder: $gameDownloadsFolder."
+# Look into the downloads/games folder to see what downloads are configured
+Write-Host "Creating ROM directories and filling with freeware ROMs in $RomsFolder"
+
+Write-Host "INFO: Obtaining Freeware Games lists in folder: $($downloads.Games)"
 $gameCacheFolder = [Path]::Combine($cacheFolder, "games")
 Write-Host "INFO: Freeware Game Downloads will be cached in: $gameCacheFolder."
 New-Item -ItemType Directory -Force -Path $gameCacheFolder | Out-Null
 
-# Acquire freeware games
-Write-Host "INFO: Creating ROM directories and filling with freeware ROMs in $RomsFolder"
-Get-ChildItem $gameDownloadsFolder -Filter "*.json" | ForEach-Object {
-    Write-Host "INFO: Downloading and caching freeware ROMs from: $_"
+Get-ChildItem $downloads.Games -Filter "*.json" | ForEach-Object {
+    Write-Host -ForegroundColor Green "Downloading and caching freeware ROMs from: $_"
     Get-RemoteFiles $_.FullName $gameCacheFolder
 
     Get-Content $_.FullName | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
@@ -267,18 +250,17 @@ Get-ChildItem $gameDownloadsFolder -Filter "*.json" | ForEach-Object {
                 Expand-PackedFile $sourceFile $targetFolder
             }
             else {
-                Move-Item -Path $sourceFile -Destination $targetFolder -Force | Out-Null
+                Copy-Item -Path $sourceFile -Destination $targetFolder -Force | Out-Null
             }
         }
         else {
-            Write-Host "Warning: $sourceFile not found."
+            Write-Host -ForegroundColor Red "Warning: $sourceFile not found."
         }
     }
 }
 
-# TODO: find/test freeware games for these emulators.
+# TODO: find and test freeware games for these emulators.
 Write-Host "INFO: Creating empty ROM directories $path"
-New-Item -ItemType Directory -Force -Path "$RomsFolder\amiga" | Out-Null
 New-Item -ItemType Directory -Force -Path "$RomsFolder\atari7800" | Out-Null
 New-Item -ItemType Directory -Force -Path "$RomsFolder\c64" | Out-Null
 New-Item -ItemType Directory -Force -Path "$RomsFolder\fba" | Out-Null
@@ -288,12 +270,31 @@ New-Item -ItemType Directory -Force -Path "$RomsFolder\mame" | Out-Null
 New-Item -ItemType Directory -Force -Path "$RomsFolder\msx" | Out-Null
 New-Item -ItemType Directory -Force -Path "$RomsFolder\neogeo" | Out-Null
 New-Item -ItemType Directory -Force -Path "$RomsFolder\wiiu" | Out-Null
-# TODO: write a bat to boot some DOS/Scumm games
-New-Item -ItemType Directory -Force -Path "$RomsFolder\scummvm"
+New-Item -ItemType Directory -Force -Path "$RomsFolder\scummvm" | Out-Null
 
+# #############################################################################
+# MISC ADDITIONAL SOFTWARE
+# #############################################################################
+Write-Host -ForegroundColor Yellow "INSTALLING ADDITIONAL MISC SOFTWARE"
+Write-Host -ForegroundColor Green "Downloading misc additional packages from: $($downloads.Misc)"
+Get-RemoteFiles $downloads.Misc $cacheFolder
+
+$ESThemesPath = [Path]::Combine($ESDataFolder , "themes")
+Write-Host "INFO: EmulationStation themes directory is $ESThemesPath"
+
+# Setup EmulationStation theme
+Write-Host -ForegroundColor Blue "Installing Emulation Station theme recalbox-backport"
+$themeFile = "$cacheFolder\recalbox-backport-*.zip"
+if (Test-Path $themeFile) {
+    Expand-PackedFile $themeFile "$ESThemesPath\recalbox-backport\" | Out-Null
+}
+else {
+    Write-Host -ForegroundColor Red "ERROR: $themeFile not found."
+    exit -1
+}
 
 # Add an scraper to ROMs folder
-Write-Host "INFO: Adding scraper in $RomsFolder"
+Write-Host -ForegroundColor Blue "Installing scraper in $RomsFolder"
 $scraperZip = "$cacheFolder\scraper_windows_amd64*.zip"
 if (Test-Path $scraperZip) {
     Expand-PackedFile $scraperZip $RomsFolder | Out-Null
@@ -303,8 +304,10 @@ else {
     exit -1
 }
 
-# Create Shortcuts
-Write-Host "INFO: Creating shortcuts"
+# #############################################################################
+# CREATING SHORTCUTS
+# #############################################################################
+Write-Host -ForegroundColor Yellow "CREATING SHORTCUTS"
 $ESBatName = "launch_portable.bat"
 $ESBatWindowed = "launch_portable_windowed.bat"
 $ESIconPath = [Path]::Combine($ESRootFolder, "icon.ico")
@@ -329,4 +332,4 @@ $desktop = [System.Environment]::GetFolderPath('Desktop')
 Add-Shortcut -ShortcutLocation "$desktop\EmulationStation.lnk" -ShortcutTarget $ESPortableBat -ShortcutIcon $ESIconPath -WorkingDir $ESRootFolder
 Add-Shortcut -ShortcutLocation "$desktop\EmulationStation (Windowed).lnk" -ShortcutTarget $ESPortableWindowedBat -ShortcutIcon $ESIconPath -WorkingDir $ESRootFolder
 
-Write-Host "INFO: Setup completed"
+Write-Host -ForegroundColor Yellow "FINISHED SETUP!"
