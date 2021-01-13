@@ -1,4 +1,5 @@
 using namespace System.IO
+
 Function Get-MyModule {
     Param(
         [string]$name
@@ -15,7 +16,7 @@ Function Get-MyModule {
     else { $true }
 } 
 
-function Get-RemoteFiles {
+Function Get-RemoteFiles {
     param (
         [parameter(Mandatory = $true)][string]$jsonFile,
         [parameter(Mandatory = $true)][string]$targetDir
@@ -48,7 +49,7 @@ function Get-RemoteFiles {
     }
 }
 
-function Expand-PackedFile {
+Function Expand-PackedFile {
     param (
         [String]$archiveFile,
         [String]$targetFolder,
@@ -82,7 +83,7 @@ function Expand-PackedFile {
     
 }
 
-function Extract([string]$Path, [string]$Destination) {
+Function Extract([string]$Path, [string]$Destination) {
     $sevenZipApplication = "$cacheFolder\7z\7z.exe"
     $sevenZipArguments = @(
         'x'                     ## eXtract files with full paths
@@ -93,7 +94,7 @@ function Extract([string]$Path, [string]$Destination) {
     & $sevenZipApplication $sevenZipArguments | Out-Null
 }
 
-function Write-ESSystemsConfig {
+Function Write-ESSystemsConfig {
     param(
         [String] $ConfigFile,
         [hashtable] $Systems,
@@ -124,7 +125,7 @@ function Write-ESSystemsConfig {
     $xmlWriter.Close()
 }
 
-function Add-Shortcut {
+Function Add-Shortcut {
     param (
         [String]$ShortcutLocation,
         [String]$ShortcutTarget,
@@ -143,7 +144,7 @@ function Add-Shortcut {
     $link.Save() 
 }
 
-function New-TemporaryDirectory {
+Function New-TemporaryDirectory {
     $parent = [System.IO.Path]::GetTempPath()
     [string] $name = [System.Guid]::NewGuid()
     New-Item -ItemType Directory -Path (Join-Path $parent $name)
