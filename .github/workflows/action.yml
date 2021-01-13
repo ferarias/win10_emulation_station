@@ -25,6 +25,8 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      # Runs a single command using the runners shell
-      - name: Powershell script runner
-        run: .\install.ps1 $Env:Temp\em $Env:Temp\ROM
+      # Runs a single command using the PowerShell script
+      - name: PowerShell script
+        uses: Amadevus/pwsh-script@v2.0.0
+        with:
+          script: .\install.ps1 $Env:Temp\em
