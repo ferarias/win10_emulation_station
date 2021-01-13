@@ -127,7 +127,7 @@ try {
             Start-Sleep 5
         }
 
-        $retroarchProcess = Get-Process retroarch
+        $retroarchProcess = Get-Process -Name "*retroarch*" -Verbose
         if ($retroarchProcess) {
             $retroarchProcess.CloseMainWindow()
             Start-sleep 5
