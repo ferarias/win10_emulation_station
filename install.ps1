@@ -11,10 +11,10 @@ param (
     [String]
     $CustomRomsFolder
 )
+
+. (Join-Path $PSScriptRoot functions.ps1)
+
 Write-Host -ForegroundColor White "WINDOWS 10 EMULATION STATION EASY SETUP"
-
-. .\functions.ps1
-
 try {
     # #############################################################################
     # SETUP BASIC STUFF
@@ -22,7 +22,7 @@ try {
     Write-Host -ForegroundColor Yellow "SETTING UP REQUIRED PATHS"
     # Setup some basic directories and stuff
     Write-Host "INFO: Running from $PSScriptRoot"
-    New-Item -ItemType Directory -Force -Path $InstallDir
+    New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
     Write-Host "INFO: Install directory is $InstallDir"
     $ESRootFolder = [Path]::Combine($InstallDir, "EmulationStation");
     Write-Host "INFO: EmulationStation root directory is $ESRootFolder"
@@ -32,7 +32,7 @@ try {
     # Create a folder for caching downloads
     $cacheFolder = [Path]::Combine("$PSScriptRoot", ".cache")
     Write-Host "INFO: Cache directory is: $cacheFolder"
-    New-Item -ItemType Directory -Force -Path $cacheFolder
+    New-Item -ItemType Directory -Force -Path $cacheFolder | Out-Null
 
     # Determine the ROMs directory
     if ([String]::IsNullOrEmpty($CustomRomsFolder)) {
