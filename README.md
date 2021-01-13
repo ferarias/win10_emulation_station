@@ -20,7 +20,7 @@ An auto-installer to set up a **portable** installation of [Emulation Station](h
 
 - Single one liner to install everything:
 ```
-Set-ExecutionPolicy Bypass -Scope Process -Force;[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;Invoke-WebRequest "https://github.com/ferarias/win10_emulation_station/archive/v3.1-alpha.zip" -OutFile "emulationStationInstall.zip";Expand-Archive .\emulationStationInstall.zip;cd .\emulationStationInstall; cd .\win*;.\install.ps1
+Set-ExecutionPolicy Bypass -Scope Process -Force;[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;Invoke-WebRequest "https://github.com/ferarias/win10_emulation_station/archive/v3.1-alpha2.zip" -OutFile "ESWin10.zip";Expand-Archive .\ESWin10.zip;cd .\ESWin10;Move-Item .\win* setup;cd setup;.\install.ps1
 ```
 - Script complete when powershell spits out:
 ```
