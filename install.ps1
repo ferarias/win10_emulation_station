@@ -286,7 +286,7 @@ try {
     Write-Host -ForegroundColor Blue "Installing Emulation Station theme recalbox-backport"
     $themeFile = "$cacheFolder\recalbox-backport-*.zip"
     if (Test-Path $themeFile) {
-        Expand-PackedFile $themeFile "$ESThemesPath\recalbox-backport\" | Out-Null
+        Expand-PackedFile $themeFile $ESThemesPath | Out-Null
     }
     else {
         Write-Host -ForegroundColor Red "ERROR: $themeFile not found."
