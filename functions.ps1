@@ -49,28 +49,6 @@ function Get-RemoteFiles {
     }
 }
 
-function Add-Rom {
-    param(
-        [String]$zipFile,
-        [string]$targetFolder
-    )
-    if (Test-Path $zipFile) {
-        # Create target directory
-        New-Item -ItemType Directory -Force -Path $targetFolder | Out-Null
-        if ( $zipFile.EndsWith("zip") -or $zipFile.EndsWith("7z") -or $zipFile.EndsWith("gz") ) {
-            Expand-PackedFile $zipFile $targetFolder
-        }
-        else {
-            Move-Item -Path $zipFile -Destination $targetFolder -Force | Out-Null
-        }
-
-    }
-    else {
-        Write-Host "ERROR: $zipFile not found."
-        exit -1
-    }
-}
-
 function Expand-PackedFile {
     param (
         [String]$archiveFile,
@@ -82,7 +60,7 @@ function Expand-PackedFile {
         # Create target directory
         New-Item -ItemType Directory -Force -Path $targetFolder | Out-Null
         # Extract to a temp folder
-        $tempFolder = "$requirementsFolder/temp/"
+        $tempFolder = "$cacheFolder/temp/"
         Extract -Path $archiveFile -Destination $tempFolder | Out-Null
         # Move files to the final directory in systems folder
         if ($zipFolderToCopy -eq "") {
@@ -100,7 +78,7 @@ function Expand-PackedFile {
 }
 
 function Extract([string]$Path, [string]$Destination) {
-    $sevenZipApplication = "$requirementsFolder\7z\7z.exe"
+    $sevenZipApplication = "$cacheFolder\7z\7z.exe"
     $sevenZipArguments = @(
         'x'                     ## eXtract files with full paths
         '-y'                    ## assume Yes on all queries
