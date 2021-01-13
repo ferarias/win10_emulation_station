@@ -127,7 +127,7 @@ try {
             Start-Sleep 5
         }
 
-        $retroarchProcess = Get-Process retroarch.exe -ErrorAction SilentlyContinue
+        $retroarchProcess = Get-Process retroarch
         if ($retroarchProcess) {
             $retroarchProcess.CloseMainWindow()
             Start-sleep 5
@@ -135,7 +135,6 @@ try {
                 $retroarchProcess | Stop-Process -Force
             }
         }
-        Stop-Process -Name "retroarch" -ErrorAction SilentlyContinue
 
     }
     else {
