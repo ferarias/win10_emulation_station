@@ -10,22 +10,46 @@ An auto-installer to set up a **portable** installation of [Emulation Station](h
 
 - Based upon the fabulous work by [Francommit](https://github.com/Francommit) in the [original version](https://github.com/Francommit/win10_emulation_station).
 - Uses an up to date version of Emulation Station from the Raspberry Pi branch
-- Auto populates emulators with public domain roms
+- Auto populates emulators with free roms
 - Auto installs a popular theme with support for adding 'Favorites'
 - Adds several useful shortcuts to the user's Desktop
-- Adds in a game content scraper which lives in (run %UserProfile%\\.emulationstation\roms\scraper.exe)
+- Adds in a game content scraper (scraper.exe in ROMs folder)
 
 
 ## Steps
 
-- Single one liner to install everything:
+### Option A. Easy setup:
+
+You can easily install everything by copying the following text and pasting it into a powershell window.
 ```
-Set-ExecutionPolicy Bypass -Scope Process -Force;[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;Invoke-WebRequest "https://github.com/ferarias/win10_emulation_station/archive/v3.1-alpha2.zip" -OutFile "ESWin10.zip";Expand-Archive .\ESWin10.zip;cd .\ESWin10;Move-Item .\win* setup;cd setup;.\install.ps1
+Set-ExecutionPolicy Bypass -Scope Process -Force;[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;$tag = (Invoke-WebRequest "https://api.github.com/repos/ferarias/win10_emulation_station/releases" -UseBasicParsing | ConvertFrom-Json)[0].tag_name;Invoke-WebRequest "https://github.com/ferarias/win10_emulation_station/archive/$tag.zip" -OutFile "ESWin10.zip";Expand-Archive .\ESWin10.zip;Move-Item .\ESWin10\win* .\ESWin10\setup;.\ESWin10\setup\install.ps1
+
 ```
-- Script complete when powershell spits out:
+
+### Option B. Detailed steps (recommended)
+
+- Download the [Latest Release](https://github.com/ferarias/win10_emulation_station/releases/latest) (Source code zip or tgz)
+- Extract to a convenient folder. E.g.: c:\tmp
+- Start a PowerShell and CD into the extracted directory
+- You can run the installation process using the `.\install.ps1` script. The syntax is as follows:  
+```powershell
+install.ps1 [-InstallDir] <string> [[-CustomRomsFolder] <string>] [<CommonParameters>]
+```
+Example:  
+```powershell
+.\install.ps1 D:\emu
+```
+
+If you already have a folder with ROM files, use the second parameter to specify it:
+```powershell
+.\install.ps1 D:\emu D:\ROM
+```
+- Script has completed when Powershell spits out:
 ```
 INFO: Setup completed
 ```
+
+
 
 ## Running
 
@@ -35,12 +59,6 @@ INFO: Setup completed
 4. If you want to open EmulationStation *in a window* instead of fullscreen, double-click the `EmulationStation (Windowed)` shortcut.
 
 
-## Optional Features and Tips
-
-- If you prefer to run your scripts via context menu (right mouse button) but lack the abilitiy to run them in an admin session, you can just double-click the "powershell_run-as-admin.reg" file and accept the registry modification. It will add a new entry to the menu to do that easily.
-- If you use OneDrive to store your ROMs and saves, you can run the script onedrive.ps1 or you can modifify it to any other specific folder. Further instructions in comments
-- Some new themes shows videos: [es-theme-crt](https://github.com/PRElias/es-theme-crt)
-- Script for easy scraping included. Just run and it will backup your gamefile.xml for each ROM folder and produce a new one with data from scrap services (if you have modified your ROM folder, please check before run)
 
 
 ## Troubleshooting
