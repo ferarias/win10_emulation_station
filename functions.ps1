@@ -40,11 +40,11 @@ Function Get-RemoteFiles {
         }
         if (![System.IO.File]::Exists($output)) {
     
-            Write-Host -ForegroundColor Green "Downloading $file"
+            Write-Host -ForegroundColor Green " Downloading $file..."
             Invoke-WebRequest $url -Out $output   
         }
         else {
-            Write-Host -ForegroundColor Gray "Already downloaded $file... skipped."
+            Write-Host -ForegroundColor Gray " Already downloaded $file... skipped."
         }
     }
 }

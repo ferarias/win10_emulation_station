@@ -14,12 +14,14 @@ param (
 
 . (Join-Path $PSScriptRoot functions.ps1)
 
-Write-Host -ForegroundColor White "WINDOWS 10 EMULATION STATION EASY SETUP"
+Write-Host -ForegroundColor Magenta "***************************************"
+Write-Host -ForegroundColor White   "WINDOWS 10 EMULATION STATION EASY SETUP"
+Write-Host -ForegroundColor Magenta "***************************************"
 try {
     # #############################################################################
     # SETUP BASIC STUFF
     # #############################################################################
-    Write-Host -ForegroundColor Yellow "SETTING UP REQUIRED PATHS"
+    Write-Host -ForegroundColor DarkYellow "SETTING UP REQUIRED PATHS"
     # Setup some basic directories and stuff
     Write-Host "INFO: Running from $PSScriptRoot"
     New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
@@ -63,13 +65,13 @@ try {
     # #############################################################################
     # ## CORE SOFTWARE
     # #############################################################################
-    Write-Host -ForegroundColor Yellow "INSTALLING CORE SOFTWARE"
-    Write-Host -ForegroundColor Green "Downloading core software from $($downloads.Core)"
+    Write-Host -ForegroundColor DarkYellow "INSTALLING CORE SOFTWARE"
+    Write-Host -ForegroundColor DarkGreen "Downloading core software from $($downloads.Core)"
     Get-RemoteFiles $downloads.Core $cacheFolder
 
     # 7-zip
     if (!(Get-MyModule -name "7Zip4Powershell")) { 
-        Write-Host -ForegroundColor Blue "Installing required 7zip module in Powershell"
+        Write-Host -ForegroundColor Cyan "Installing required 7zip module in Powershell"
         Install-Module -Name "7Zip4Powershell" -Scope CurrentUser -Force 
     }
     Expand-7Zip -ArchiveFileName "$cacheFolder\7z1900.exe" -TargetPath "$cacheFolder\7z\"
@@ -81,32 +83,32 @@ try {
     # #############################################################################
     # ## SYSTEMS
     # #############################################################################
-    Write-Host -ForegroundColor Yellow "INSTALLING SYSTEMS (EMULATORS)"
+    Write-Host -ForegroundColor DarkYellow "INSTALLING SYSTEMS (EMULATORS)"
     $ESSystemsPath = [Path]::Combine($ESDataFolder, "systems")
     Write-Host "INFO: EmulationStation systems (emulators) directory is $ESSystemsPath"
 
-    Write-Host -ForegroundColor Green "Downloading Systems software from $($downloads.Systems) to $cacheFolder"
+    Write-Host -ForegroundColor DarkGreen "Downloading Systems software from $($downloads.Systems) to $cacheFolder"
     Get-RemoteFiles $downloads.Systems $cacheFolder
 
     Get-Content $downloads.Systems | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
         $file = [Path]::Combine($cacheFolder, $_.file)
         $installPath = [Path]::Combine($ESSystemsPath, $_.folder)
         $innerFolder = $_.innerFolder
-        Write-Host -ForegroundColor Blue "Installing $file system in $installPath"
+        Write-Host -ForegroundColor Cyan "Installing $file system in $installPath"
         Expand-PackedFile $file $installPath $innerFolder | Out-Null
     }
 
     # #############################################################################
     # ## SYSTEMS CONFIGURATION
     # #############################################################################
-    Write-Host -ForegroundColor Yellow "CONFIGURING SYSTEMS"
+    Write-Host -ForegroundColor DarkYellow "CONFIGURING SYSTEMS"
     # RETROARCH system configuration
     $retroArchInstallPath = [Path]::Combine($ESSystemsPath, "retroarch")
     $retroarchExecutable = [Path]::Combine($retroArchInstallPath, "retroarch.exe")
     $retroarchConfigPath = [Path]::Combine($retroArchInstallPath, "retroarch.cfg")
 
     # Installing libretro cores
-    Write-Host -ForegroundColor Green "Downloading libretro cores from: $($downloads.Lrcores)"
+    Write-Host -ForegroundColor DarkGreen "Downloading libretro cores from: $($downloads.Lrcores)"
     Get-RemoteFiles $downloads.Lrcores $cacheFolder
     $retroArchCoresFile = [Path]::Combine($downloadsFolder, "lr-cores.json");
     $retroArchCoresPath = [Path]::Combine($retroArchInstallPath, "cores");
@@ -143,7 +145,7 @@ try {
     }
 
     # Tweak retroarch config!
-    Write-Host -ForegroundColor Blue "Replacing RetroArch config"
+    Write-Host -ForegroundColor Cyan "Replacing RetroArch config"
     $settingToFind = 'video_fullscreen = "false"'
     $settingToSet = 'video_fullscreen = "true"'
     (Get-Content $retroarchConfigPath) -replace $settingToFind, $settingToSet | Set-Content $retroarchConfigPath
@@ -162,7 +164,7 @@ try {
 
     # DOLPHIN system configuration
     $dolphinBinary = "$ESSystemsPath/dolphin/Dolphin.exe"
-    Write-Host -ForegroundColor Blue "Generating Dolphin Config"
+    Write-Host -ForegroundColor Cyan "Generating Dolphin Config"
     New-Item -Path "$ESSystemsPath/dolphin/portable.txt" -ItemType File -Force | Out-Null
     New-Item -Path "$ESSystemsPath/dolphin/User/Config" -ItemType Directory -Force | Out-Null
     $dolphinConfigFile = "$ESSystemsPath/dolphin/User/Config/Dolphin.ini"
@@ -173,7 +175,7 @@ try {
     # EMULATION STATION CONFIGURATION
     # Set EmulationStation available systems (es_systems.cfg)
     $ESSystemsConfigPath = "$ESDataFolder/es_systems.cfg"
-    Write-Host -ForegroundColor Blue "Setting up EmulationStation Systems Config at $ESSystemsConfigPath"
+    Write-Host -ForegroundColor Cyan "Setting up EmulationStation Systems Config at $ESSystemsConfigPath"
     $systems = @{
         "amiga500"     = @("Amiga", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amiga500");
         "amigacdtv"    = @("Amiga", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amigacdtv");
@@ -207,14 +209,14 @@ try {
 
     # Set EmulationStation configurations (es_settings.cfg)
     $ESSettingsFile = "$ESDataFolder\es_settings.cfg"
-    Write-Host -ForegroundColor Blue "Generating ES settings file at $ESSettingsFile"
+    Write-Host -ForegroundColor Cyan "Generating ES settings file at $ESSettingsFile"
     $newEsConfigFile = [Path]::Combine($PSScriptRoot, "configs", "es_settings.cfg")
     Copy-Item -Path $newEsConfigFile -Destination $ESSettingsFile -Force
     (Get-Content $ESSettingsFile) -replace "{ESInstallFolder}", $ESRootFolder | Set-Content $ESSettingsFile
 
     # Set EmulationStation default keyboard mapping (es_input.cfg)
     $esInputConfigFile = "$ESDataFolder\es_input.cfg"
-    Write-Host -ForegroundColor Blue "Setting up Emulation Station basic keyboard input at $esInputConfigFile"
+    Write-Host -ForegroundColor Cyan "Setting up Emulation Station basic keyboard input at $esInputConfigFile"
     $newEsInputConfigFile = [Path]::Combine($PSScriptRoot, "configs", "es_input.cfg")
     Copy-Item -Path $newEsInputConfigFile -Destination $esInputConfigFile
 
@@ -222,7 +224,7 @@ try {
     # #############################################################################
     # ## OPEN-SOURCE/FREEWARE ROMS INSTALLATION
     # #############################################################################
-    Write-Host -ForegroundColor Yellow "INSTALLING SOME FREEWARE ROMS"
+    Write-Host -ForegroundColor DarkYellow "INSTALLING SOME FREEWARE ROMS"
     # Acquire required files and leave them in a folder for later use
     # Look into the downloads/games folder to see what downloads are configured
     Write-Host "Creating ROM directories and filling with freeware ROMs in $RomsFolder"
@@ -233,7 +235,7 @@ try {
     New-Item -ItemType Directory -Force -Path $gameCacheFolder | Out-Null
 
     Get-ChildItem $downloads.Games -Filter "*.json" | ForEach-Object {
-        Write-Host -ForegroundColor Green "Downloading and caching freeware ROMs from: $_"
+        Write-Host -ForegroundColor DarkGreen "Downloading and caching freeware ROMs from: $_"
         Get-RemoteFiles $_.FullName $gameCacheFolder
 
         Get-Content $_.FullName | ConvertFrom-Json | Select-Object -ExpandProperty items | ForEach-Object {
@@ -275,15 +277,15 @@ try {
     # #############################################################################
     # MISC ADDITIONAL SOFTWARE
     # #############################################################################
-    Write-Host -ForegroundColor Yellow "INSTALLING ADDITIONAL MISC SOFTWARE"
-    Write-Host -ForegroundColor Green "Downloading misc additional packages from: $($downloads.Misc)"
+    Write-Host -ForegroundColor DarkYellow "INSTALLING ADDITIONAL MISC SOFTWARE"
+    Write-Host -ForegroundColor DarkGreen "Downloading misc additional packages from: $($downloads.Misc)"
     Get-RemoteFiles $downloads.Misc $cacheFolder
 
     $ESThemesPath = [Path]::Combine($ESDataFolder , "themes")
     Write-Host "INFO: EmulationStation themes directory is $ESThemesPath"
 
     # Setup EmulationStation theme
-    Write-Host -ForegroundColor Blue "Installing Emulation Station theme recalbox-backport"
+    Write-Host -ForegroundColor Cyan "Installing Emulation Station theme recalbox-backport"
     $themeFile = "$cacheFolder\recalbox-backport-*.zip"
     if (Test-Path $themeFile) {
         Expand-PackedFile $themeFile $ESThemesPath | Out-Null
@@ -294,7 +296,7 @@ try {
     }
 
     # Add an scraper to ROMs folder
-    Write-Host -ForegroundColor Blue "Installing scraper in $RomsFolder"
+    Write-Host -ForegroundColor Cyan "Installing scraper in $RomsFolder"
     $scraperZip = "$cacheFolder\scraper_windows_amd64*.zip"
     if (Test-Path $scraperZip) {
         Expand-PackedFile $scraperZip $RomsFolder | Out-Null
@@ -307,7 +309,7 @@ try {
     # #############################################################################
     # CREATING SHORTCUTS
     # #############################################################################
-    Write-Host -ForegroundColor Yellow "CREATING SHORTCUTS"
+    Write-Host -ForegroundColor DarkYellow "CREATING SHORTCUTS"
     $ESBatName = "launch_portable.bat"
     $ESBatWindowed = "launch_portable_windowed.bat"
     $ESIconPath = [Path]::Combine($ESRootFolder, "icon.ico")
@@ -332,7 +334,7 @@ try {
     Add-Shortcut -ShortcutLocation "$desktop\EmulationStation.lnk" -ShortcutTarget $ESPortableBat -ShortcutIcon $ESIconPath -WorkingDir $ESRootFolder
     Add-Shortcut -ShortcutLocation "$desktop\EmulationStation (Windowed).lnk" -ShortcutTarget $ESPortableWindowedBat -ShortcutIcon $ESIconPath -WorkingDir $ESRootFolder
 
-    Write-Host -ForegroundColor Yellow "FINISHED SETUP!"
+    Write-Host -ForegroundColor DarkYellow "FINISHED SETUP!"
 }
 catch { 
     Write-Error $_ 
