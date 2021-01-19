@@ -1,5 +1,10 @@
 using namespace System.IO
 
+# Create a folder for caching downloads
+$cacheFolder = [Path]::Combine("$PSScriptRoot", ".cache")
+Write-Host "INFO: Cache directory is: $cacheFolder"
+New-Item -ItemType Directory -Force -Path $cacheFolder | Out-Null
+
 Function Get-MyModule {
     Param(
         [string]$name
@@ -15,6 +20,15 @@ Function Get-MyModule {
     } 
     else { $true }
 } 
+
+
+# 7-zip
+if (!(Get-MyModule -name "7Zip4Powershell")) { 
+    Write-Host -ForegroundColor Cyan "Installing required 7zip module in Powershell"
+    Install-Module -Name "7Zip4Powershell" -Scope CurrentUser -Force 
+}
+
+Expand-7Zip -ArchiveFileName "$cacheFolder\7z1900.exe" -TargetPath "$cacheFolder\7z\"
 
 Function Get-RemoteFiles {
     param (
@@ -57,7 +71,7 @@ Function Expand-PackedFile {
     )
     $tempFolder = New-TemporaryDirectory
     try {
-        if (Test-Path $archiveFile) {
+        if (Test-Path -LiteralPath $archiveFile) {
             # Create target directory
             New-Item -ItemType Directory -Force -Path $targetFolder | Out-Null
             # Extract to a temp folder

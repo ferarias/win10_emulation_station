@@ -11,13 +11,18 @@
             "platform": "amiga500"
         },
         {
-            "file": "downloads_alienbreed_ADFs.zip",
-            "url": "http://dream17.abime.net/download.php?id=4",
+            "file": "Exile_FINAL_ADF [cr Galahad][!].zip",
+            "url": "http://www.thunderpeel2001.com/exile/Exile_FINAL_ADF%20[cr%20Galahad][!].ZIP",
             "platform": "amiga500"
         },
         {
-            "file": "downloads_alienbreed2_ADFs.zip",
-            "url": "http://dream17.abime.net/download.php?id=12",
+            "file": "r-type.zip",
+            "url": "http://www.factor5.de/downloads/r-type.zip",
+            "platform": "amiga500"
+        },
+        {
+            "file": "lotus.zip",
+            "url": "http://gremlinworld.emuunlim.com/amiga/lotus.zip",
             "platform": "amiga500"
         }
     ]

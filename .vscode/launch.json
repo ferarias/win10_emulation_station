@@ -5,11 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "PowerShell: Launch Script",
+            "name": "PowerShell: Install script",
             "type": "PowerShell",
             "request": "launch",
             "script": "${workspaceFolder}/install.ps1",
             "cwd": "${workspaceFolder}","args": ["-InstallDir D:\\em", "-CustomRomsFolder D:\\ROM"]
+        },
+        {
+            "name": "PowerShell: Update games script",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceFolder}/updateGames.ps1",
+            "cwd": "${workspaceFolder}","args": [
+                "-gamesDownloads .\\downloads\\games", 
+                "-gameCacheFolder .\\.cache\\games ",
+                "-RomsFolder D:\\ROM"
+            ]
         }
     ]
 }
