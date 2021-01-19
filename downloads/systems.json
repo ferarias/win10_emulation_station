@@ -6,27 +6,33 @@
 			"folder": "retroarch"
 		},
 		{
-			"file": "dolphin-master-5.0-12716-x64.7z",
+			"file": "dolphin.7z",
 			"url": "https://dl.dolphin-emu.org/builds/ed/c4/dolphin-master-5.0-12716-x64.7z",
 			"folder": "dolphin",
 			"innerFolder": "Dolphin-x64"
 		},
 		{
-			"file": "cemu_1.22.0.zip",
+			"file": "cemu.zip",
 			"url": "https://cemu.info/releases/cemu_1.22.0.zip",
 			"folder": "cemu",
 			"innerFolder": "cemu_1.22.0"
 		},
 		{
-			"file": "ePSXe205.zip",
+			"file": "ePSXe.zip",
 			"url": "http://www.epsxe.com/files/ePSXe205.zip",
 			"folder": "epsx"
 		},
 		{
-			"file": "pcsx2-1.6.0-setup.exe",
+			"file": "pcsx2.exe",
 			"url": "https://delivery2.filecroco.com/kits_6/pcsx2-1.6.0-setup.exe",
 			"folder": "pcsx2",
 			"innerFolder": "`$TEMP/PCSX2 1.6.0"
+		},
+		{
+			"repo": "tonioni/WinUAE",
+			"file": "WinUAE.zip",
+			"url": "https://download.abime.net/winuae/releases/WinUAE{tag}_x64.zip",
+			"folder": "winuae"
 		}
     ]
 }

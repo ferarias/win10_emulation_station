@@ -5,8 +5,9 @@
             "repo": "sselph/scraper"
         },
         {
-            "file": "recalbox-backport-v2.1.zip",
-            "repo": "fonic/recalbox-backport"
+            "repo": "fonic/recalbox-backport",
+            "file": "recalbox-backport.zip",
+            "url": "https://github.com/fonic/recalbox-backport/releases/download/{tag}/{tag}.zip"
         }
     ]
 }

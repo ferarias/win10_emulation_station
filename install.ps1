@@ -66,7 +66,7 @@ try {
 
     # Emulation Station
     Expand-PackedFile "$cacheFolder/emulationstation_win32_latest.zip" $ESRootFolder
-    Expand-PackedFile "$cacheFolder/EmulationStation-Win32-continuous-master.zip" $ESRootFolder 
+    Expand-PackedFile "$cacheFolder/EmulationStation-Win32.zip" $ESRootFolder 
 
     # #############################################################################
     # ## SYSTEMS
@@ -223,7 +223,7 @@ try {
 
     # Setup EmulationStation theme
     Write-Host -ForegroundColor Cyan "Installing Emulation Station theme recalbox-backport"
-    $themeFile = "$cacheFolder\recalbox-backport-*.zip"
+    $themeFile = "$cacheFolder\recalbox-backport.zip"
     if (Test-Path $themeFile) {
         Expand-PackedFile $themeFile $ESThemesPath | Out-Null
     }
@@ -234,7 +234,7 @@ try {
 
     # Add an scraper to ROMs folder
     Write-Host -ForegroundColor Cyan "Installing scraper in $RomsFolder"
-    $scraperZip = "$cacheFolder\scraper_windows_amd64*.zip"
+    $scraperZip = "$cacheFolder\scraper_windows_amd64.zip"
     if (Test-Path $scraperZip) {
         Expand-PackedFile $scraperZip $RomsFolder | Out-Null
     }

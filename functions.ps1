@@ -43,15 +43,23 @@ Function Get-RemoteFiles {
         $repo = $_.repo
         if($Null -ne $repo) {
             # This is a GitHub repo. We need to find out the latest tag and then build the URI to that release file
-            $releases = "https://api.github.com/repos/$repo/releases"
-            $tag = (Invoke-WebRequest $releases -UseBasicParsing | ConvertFrom-Json)[0].tag_name
-            $url = "https://github.com/$repo/releases/download/$tag/$file"
-            $name = $file.Split(".")[0]
-            $zip = "$name-$tag.zip"
-            $output = "$targetDir\$zip"
-        } else {
-            $output = "$targetDir\$file"
+            $releasesUri = "https://api.github.com/repos/$repo/releases"
+            $releasesResponse = Invoke-WebRequest $releasesUri -UseBasicParsing | ConvertFrom-Json
+            if($Null -ne $releasesResponse) {
+                $tag = $releasesResponse[0].tag_name
+            } else {
+                $tagsUri = "https://api.github.com/repos/$repo/tags"
+                $tagsResponse = Invoke-WebRequest $tagsUri -UseBasicParsing | ConvertFrom-Json
+                $tag = $tagsResponse[0].name
+            }
+            if($Null -ne $url) {
+                $url = $url -replace "{tag}", $tag
+            }
+            else {
+                $url = "https://github.com/$repo/releases/download/$tag/$file"
+            }
         }
+        $output = "$targetDir\$file"
         if (![System.IO.File]::Exists($output)) {
     
             Write-Host -ForegroundColor Green " Downloading $file..."
