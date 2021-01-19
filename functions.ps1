@@ -27,7 +27,7 @@ if (!(Get-MyModule -name "7Zip4Powershell")) {
     Write-Host -ForegroundColor Cyan "Installing required 7zip module in Powershell"
     Install-Module -Name "7Zip4Powershell" -Scope CurrentUser -Force 
 }
-
+Invoke-WebRequest "https://www.7-zip.org/a/7z1900.exe" -Out "$cacheFolder\7z1900.exe"
 Expand-7Zip -ArchiveFileName "$cacheFolder\7z1900.exe" -TargetPath "$cacheFolder\7z\"
 
 Function Get-RemoteFiles {

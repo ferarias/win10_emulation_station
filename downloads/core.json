@@ -1,10 +1,6 @@
 {
 	"items": [
 		{
-			"file": "7z1900.exe",
-			"url": "https://www.7-zip.org/a/7z1900.exe"
-		},
-		{
 			"file": "emulationstation_win32_latest.zip",
 			"url": "https://emulationstation.org/downloads/releases/emulationstation_win32_latest.zip"
 		},
