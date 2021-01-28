@@ -14,6 +14,8 @@ param (
 
 . (Join-Path $PSScriptRoot functions.ps1)
 
+# TODO SAVEGAMES
+
 Write-Host -ForegroundColor Magenta "***************************************"
 Write-Host -ForegroundColor White   "WINDOWS 10 EMULATION STATION EASY SETUP"
 Write-Host -ForegroundColor Magenta "***************************************"
@@ -90,6 +92,7 @@ try {
     # ## SYSTEMS CONFIGURATION
     # #############################################################################
     Write-Host -ForegroundColor DarkYellow "CONFIGURING SYSTEMS"
+    $configsPath = Join-Path -Path $PSScriptRoot -ChildPath "configs"
     # RETROARCH system configuration
     $retroArchInstallPath = [Path]::Combine($ESSystemsPath, "retroarch")
     $retroarchExecutable = [Path]::Combine($retroArchInstallPath, "retroarch.exe")
@@ -156,20 +159,50 @@ try {
     New-Item -Path "$ESSystemsPath/dolphin/portable.txt" -ItemType File -Force | Out-Null
     New-Item -Path "$ESSystemsPath/dolphin/User/Config" -ItemType Directory -Force | Out-Null
     $dolphinConfigFile = "$ESSystemsPath/dolphin/User/Config/Dolphin.ini"
-    $newDolphinConfigFile = [Path]::Combine($PSScriptRoot, "configs", "Dolphin.ini")
+    $newDolphinConfigFile = [Path]::Combine($configsPath, "Dolphin.ini")
     Copy-Item -Path $newDolphinConfigFile -Destination $dolphinConfigFile -Force
     (Get-Content $dolphinConfigFile) -replace "{ESSystemsPath}", $ESSystemsPath | Set-Content $dolphinConfigFile
 
+    # AMIGA system configuration
+    $winuaePath = Join-Path -Path $ESSystemsPath -ChildPath "winuae" -Resolve
+    Write-Host -ForegroundColor Cyan "Generating WinUAE Config"
+    $newWinUaeIniFile = [Path]::Combine($configsPath, "winuae.ini")
+    $winUaeIniFile = Join-Path -Path $winuaePath -ChildPath "winuae.ini"
+    Copy-Item -Path $newWinUaeIniFile -Destination $winUaeIniFile -Force
+    New-Item -Path "$ESSystemsPath/winuae/conf" -ItemType Directory -Force | Out-Null
+    New-Item -Path "$ESSystemsPath/winuae/rom" -ItemType Directory -Force | Out-Null
+    New-Item -Path "$ESSystemsPath/winuae/disk" -ItemType Directory -Force | Out-Null
+    New-Item -Path "$ESSystemsPath/winuae/floppy" -ItemType Directory -Force | Out-Null
+    New-Item -Path "$ESSystemsPath/winuae/media" -ItemType Directory -Force | Out-Null
+    Get-ChildItem -Path $configsPath -Filter *.uae | ForEach-Object { 
+        Copy-Item -Path $_ -Destination "$ESSystemsPath/winuae/conf/$($_.Name)" -Force | Out-Null
+    }
+
+    # Create a launcher bat
+    $batContents = "@SET ECHO OFF
+IF ""%1""=="""" GOTO fin
+IF /I ""%~x1""=="".lha"" (
+    CD $winuaePath
+    .\winuae64.exe -f .\conf\a1200.uae -s ""filesystem2=rw,DH0:WHDLoad-Game-Launcher:.\disk\WHDLoad-Game-Launcher,0"" -s ""filesystem2=ro,DH1:%~nx1:%~1,-128"" -G
+) ELSE (
+    $retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %~1
+)
+:fin
+"
+    New-Item -Path "$ESSystemsPath/winuae" -Name "launcher.bat" -ItemType File -Value $batContents -Force | Out-Null
+    
+    $whdLauncher = Join-Path $winuaePath "launcher.bat"
+    
     # EMULATION STATION CONFIGURATION
     # Set EmulationStation available systems (es_systems.cfg)
     $ESSystemsConfigPath = "$ESDataFolder/es_systems.cfg"
     Write-Host -ForegroundColor Cyan "Setting up EmulationStation Systems Config at $ESSystemsConfigPath"
     $systems = @{
-        "amiga500"     = @("Amiga", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amiga500");
-        "amigacdtv"    = @("Amiga", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amigacdtv");
-        "amiga600"     = @("Amiga", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amiga600");    
-        "amiga1200"    = @("Amiga", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amiga1200");
-        "amigacd32"    = @("Amiga", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amigacd32");
+        "amiga500"     = @("Commodore Amiga 500", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amiga500");
+        "amigacdtv"    = @("Commodore Amiga CDTV", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amigacdtv");
+        "amiga600"     = @("Commodore Amiga 600", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amiga600");    
+        "amiga1200"    = @("Commodore Amiga 1200", ".adf .ADF .lha .LHA", "$whdLauncher %ROM%", "amiga", "amiga1200");
+        "amigacd32"    = @("Commodore Amiga CD32", ".adf .ADF", "$retroarchExecutable -L $retroArchCoresPath\puae_libretro.dll %ROM%", "amiga", "amigacd32");
         "atari2600"    = @("Atari 2600", ".a26 .bin .rom .A26 .BIN .ROM", "$retroarchExecutable -L $retroArchCoresPath\stella_libretro.dll %ROM%", "atari2600", "atari2600");
         "atari7800"    = @("Atari 7800 Prosystem", ".a78 .bin .A78 .BIN", "$retroarchExecutable -L $retroArchCoresPath\prosystem_libretro.dll %ROM%", "atari7800", "atari7800");
         "c64"          = @("Commodore 64", ".crt .d64 .g64 .t64 .tap .x64 .zip .CRT .D64 .G64 .T64 .TAP .X64 .ZIP", "$retroarchExecutable -L $retroArchCoresPath\vice_x64_libretro.dll %ROM%", "c64", "c64");

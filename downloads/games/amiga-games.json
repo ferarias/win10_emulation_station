@@ -1,6 +1,11 @@
 {
     "items": [
         {
+            "file": "BattleSquadronDemo_v1.0.lha",
+            "url": "http://www.whdownload.com/games/B/BattleSquadronDemo_v1.0.lha",
+            "platform": "amiga"
+        },
+        {
             "file": "downloads_apidya_ADFs.zip",
             "url": "http://dream17.abime.net/download.php?id=22",
             "platform": "amiga500"

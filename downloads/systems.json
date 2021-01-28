@@ -33,6 +33,12 @@
 			"file": "WinUAE.zip",
 			"url": "https://download.abime.net/winuae/releases/WinUAE{tag}_x64.zip",
 			"folder": "winuae"
+		},
+		{
+			"repo": "solarmon/WHDLoad-Game-Launcher",
+			"file": "WHDLoad-Game-Launcher.zip",
+			"url": "https://github.com/solarmon/WHDLoad-Game-Launcher/releases/download/{tag}/WHDLoad-Game-Launcher-{tag}.zip",
+			"folder": "winuae\\disk"
 		}
     ]
 }
